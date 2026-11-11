@@ -60,8 +60,6 @@
         <Filename Value="..\data\sqlite\uSqliteBrowserReadRepository.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
-        <IsPartOfProject Value="True"/>
-      </Unit>
       <Unit>
         <Filename Value="..\data\uSecurityManager.pas"/>
         <IsPartOfProject Value="True"/>

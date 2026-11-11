@@ -69,7 +69,7 @@ begin
       Fail('ws.smoke missing after reopen');
     if ReadBack <> Probe then
       Fail('ws.smoke value mismatch after reopen');
-    if TAppDatabase.SchemaVersion(adsWorkspace, WsId) <> 2 then
+    if TAppDatabase.SchemaVersion(adsWorkspace, WsId) <> 3 then
       Fail('Workspace schema version mismatch');
   finally
     TAppDatabase.CloseWorkspace(WsId);
