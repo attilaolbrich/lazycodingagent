@@ -1,0 +1,171 @@
+object McpConnectionForm: TMcpConnectionForm
+  Left = 360
+  Height = 560
+  Top = 180
+  Width = 680
+  BorderStyle = bsDialog
+  Caption = 'MCP Connection'
+  ClientHeight = 560
+  ClientWidth = 680
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblName: TLabel
+    Left = 24
+    Height = 20
+    Top = 24
+    Width = 40
+    Caption = 'Name'
+  end
+  object edtName: TEdit
+    Left = 24
+    Height = 28
+    Top = 48
+    Width = 632
+    TabOrder = 0
+  end
+  object lblTransport: TLabel
+    Left = 24
+    Height = 20
+    Top = 88
+    Width = 62
+    Caption = 'Transport'
+  end
+  object cboTransport: TLcaPaintComboBox
+    Left = 24
+    Height = 32
+    Top = 112
+    Width = 200
+    ItemHeight = 22
+    TabOrder = 1
+    OnChange = cboTransportChange
+  end
+  object lblUrl: TLabel
+    Left = 24
+    Height = 20
+    Top = 160
+    Width = 93
+    Caption = 'Connection URL'
+  end
+  object edtUrl: TEdit
+    Left = 24
+    Height = 28
+    Top = 184
+    Width = 632
+    TabOrder = 2
+  end
+  object lblBearer: TLabel
+    Left = 24
+    Height = 20
+    Top = 224
+    Width = 82
+    Caption = 'Bearer token'
+  end
+  object edtBearer: TEdit
+    Left = 24
+    Height = 28
+    Top = 248
+    Width = 632
+    PasswordChar = '*'
+    TabOrder = 3
+    OnChange = edtBearerChange
+  end
+  object lblCommand: TLabel
+    Left = 24
+    Height = 20
+    Top = 160
+    Width = 66
+    Caption = 'Command'
+  end
+  object edtCommand: TEdit
+    Left = 24
+    Height = 28
+    Top = 184
+    Width = 632
+    TabOrder = 4
+  end
+  object lblArgs: TLabel
+    Left = 24
+    Height = 20
+    Top = 224
+    Width = 118
+    Caption = 'Arguments (JSON)'
+  end
+  object edtArgs: TEdit
+    Left = 24
+    Height = 28
+    Top = 248
+    Width = 632
+    TabOrder = 5
+    Text = '[]'
+  end
+  object lblWorkingDir: TLabel
+    Left = 24
+    Height = 20
+    Top = 288
+    Width = 89
+    Caption = 'Working directory'
+  end
+  object edtWorkingDir: TEdit
+    Left = 24
+    Height = 28
+    Top = 312
+    Width = 632
+    TabOrder = 6
+  end
+  object lblTimeout: TLabel
+    Left = 24
+    Height = 20
+    Top = 360
+    Width = 108
+    Caption = 'Timeout (seconds)'
+  end
+  object edtTimeout: TEdit
+    Left = 24
+    Height = 28
+    Top = 384
+    Width = 120
+    TabOrder = 7
+    Text = '30'
+  end
+  object chkEnabled: TCheckBox
+    Left = 24
+    Height = 24
+    Top = 424
+    Width = 72
+    Caption = 'Enabled'
+    Checked = True
+    State = cbChecked
+    TabOrder = 8
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 56
+    Top = 504
+    Width = 680
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 56
+    ClientWidth = 680
+    TabOrder = 9
+    object btnOK: TLcaPaintButton
+      Left = 472
+      Height = 32
+      Top = 12
+      Width = 88
+      Caption = 'OK'
+      TabOrder = 0
+      OnClick = btnOKClick
+      ButtonRole = tbrPrimary
+    end
+    object btnCancel: TLcaPaintButton
+      Left = 568
+      Height = 32
+      Top = 12
+      Width = 88
+      Caption = 'Cancel'
+      ModalResult = 2
+      TabOrder = 1
+    end
+  end
+end
