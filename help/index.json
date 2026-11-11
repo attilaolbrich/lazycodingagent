@@ -1,0 +1,62 @@
+[
+  {
+    "id": "getting-started",
+    "title": "Getting started",
+    "file": "getting-started.md",
+    "keywords": ["workspace", "project", "open", "remove workspace", "delete workspace", "workspaces list", "settings", "api key", "model", "openssl", "libssl3", "https", "raspberry pi", "fetch models"]
+  },
+  {
+    "id": "workspace-layout",
+    "title": "Workspace layout and panels",
+    "file": "workspace-layout.md",
+    "keywords": ["navigation", "layout", "page control", "terminal", "utility", "splitter", "theme", "painted", "scrollbar", "native", "tool error", "tool-errors.log", "roadmap", "future", "multi-agent", "knowledge base", "execution plans", "brain", "coming soon", "workspace menu", "setup dialog", "project rules", "tasks and plans", "editor", "markdown", "html preview", "detach", "floating panel", "execution detail", "json", "remove workspace", "workspaces list"]
+  },
+  {
+    "id": "chat-and-modes",
+    "title": "Chat, sessions, and modes",
+    "file": "chat-and-modes.md",
+    "keywords": ["session", "new session", "archive", "delete session", "permanently delete", "right-click", "ask", "plan", "agent", "model", "dropdown", "menu", "debugging", "learn mode", "tools and logs", "execution detail", "follow", "tab strip", "+", "calling", "activity", "step limit", "max steps", "max output tokens", "truncation", "summarize", "context window", "image", "screenshot", "vision", "attach", "attachment", "sandbox", "outside", "working directory", "allow modify", "base url", "base api endpoint", "provider", "nous research", "openrouter", "endpoint", "timeout", "http timeout", "connect timeout", "retry", "retries"]
+  },
+  {
+    "id": "project-rules",
+    "title": "Project rules",
+    "file": "project-rules.md",
+    "keywords": ["rules", ".rules", "prompt", "guidelines"]
+  },
+  {
+    "id": "how-the-agent-works",
+    "title": "How the agent works",
+    "file": "how-the-agent-works.md",
+    "keywords": ["react", "llm", "loop", "system prompt", "tools", "educational", "tool error", "debugger", "execution log", "step limit", "max steps", "calling", "follow", "summarize", "context", "truncation", "max tokens", "sandbox", "outside workspace", "path", "project rules", "language", "workspace stack"]
+  },
+  {
+    "id": "tools-reference",
+    "title": "Agent tools reference",
+    "file": "tools-reference.md",
+    "keywords": ["read_file", "write_file", "edit_file", "apply_patch", "shell", "patch", "hunk", "grep", "git", "todo", "plan", "web_fetch", "browser_read", "browser_navigate", "browser_click", "chromium", "javascript", "url", "fetch", "website", "documentation", "automation", "screenshot", "cdp"]
+  },
+  {
+    "id": "app-data-storage",
+    "title": "Application data and settings",
+    "file": "app-data-storage.md",
+    "keywords": ["sqlite", "global.db", "config", "settings", "migration", "backup", "encrypted", "api key", "legacy", "ini"]
+  },
+  {
+    "id": "web-search",
+    "title": "Web Search",
+    "file": "web-search.md",
+    "keywords": ["web_search", "brave", "searxng", "tavily", "search", "internet", "api key", "fallback", "provider", "docker", "compose", "localhost", "127.0.0.1", "local", "private", "searxng docker", "no api key"]
+  },
+  {
+    "id": "browser-automation",
+    "title": "Browser automation",
+    "file": "browser-automation.md",
+    "keywords": ["browser", "chromium", "cdp", "localhost", "testing", "screenshot", "session", "playwright", "selenium", "visible", "headed", "login", "window", "pause", "resume", "automation_paused"]
+  },
+  {
+    "id": "performance-prompt-caching",
+    "title": "Prompt caching",
+    "file": "performance-prompt-caching.md",
+    "keywords": ["prompt caching", "cache", "tokens", "performance", "anthropic", "openai", "gemini", "ollama", "cost", "latency"]
+  }
+]

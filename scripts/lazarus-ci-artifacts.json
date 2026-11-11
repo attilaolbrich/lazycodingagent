@@ -1,0 +1,42 @@
+{
+  "lazarusVersion": "4.8",
+  "targets": {
+    "windows-win64": {
+      "sfBase": "https://downloads.sourceforge.net/project/lazarus/Lazarus%20Windows%2064%20bits/Lazarus%204.8",
+      "files": [
+        {
+          "name": "lazarus-4.8-fpc-3.2.2-win64.exe",
+          "role": "installer",
+          "minBytes": 157286400,
+          "validatePeMz": true
+        }
+      ]
+    },
+    "macos-aarch64": {
+      "sfBase": "https://downloads.sourceforge.net/project/lazarus/Lazarus%20macOS%20aarch64/Lazarus%204.8",
+      "files": [
+        {
+          "name": "fpc-3.2.4rc1a.intelarm64-macosx.dmg",
+          "role": "fpc-dmg"
+        },
+        {
+          "name": "lazarus-darwin-aarch64-4.8.zip",
+          "role": "lazarus-zip"
+        }
+      ]
+    },
+    "macos-x86_64": {
+      "sfBase": "https://downloads.sourceforge.net/project/lazarus/Lazarus%20macOS%20x86-64/Lazarus%204.8",
+      "files": [
+        {
+          "name": "fpc-3.2.4rc1a.intelarm64-macosx.dmg",
+          "role": "fpc-dmg"
+        },
+        {
+          "name": "lazarus-darwin-x86_64-4.8.zip",
+          "role": "lazarus-zip"
+        }
+      ]
+    }
+  }
+}

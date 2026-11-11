@@ -1,0 +1,43 @@
+---
+description: Professional native desktop app — forms, menus, dialogs; not Electron single-surface UX
+alwaysApply: true
+---
+
+# Desktop application identity
+
+## Identity
+
+- **LazyCodingAgent** is a **native LCL desktop application** (Windows, Linux, macOS).
+- It is intentionally **not** modeled as a single-page Electron app, embedded web shell, or in-app “settings SPA.”
+- Treat it as **professional desktop software**: predictable windowing, menus, and focused dialogs—not a browser tab with a sidebar.
+
+## Classic professional patterns (preferred)
+
+- **Main window:** persistent shell with navigation, docked panels, utility areas, and status bar ([`mainunit.lfm`](mainunit.lfm)).
+- **Focused work in forms:** settings and secondary tasks open as **designer-owned `TForm` + `.lfm`** pairs—e.g. [`frmSettings.pas`](frmSettings.pas), [`frmNewWorkspace.pas`](frmNewWorkspace.pas), [`frmWorkspaceRules.pas`](frmWorkspaceRules.pas), [`frmHelp.pas`](frmHelp.pas)—shown from the menu or existing entry points, not crammed into one scrollable panel in the main view.
+- **Menus and shortcuts** for commands; **dialogs** for confirm, edit, and short wizard flows.
+- **Multi-surface desktop behavior** is normal: detachable panels ([`uPanelDetach.pas`](uPanelDetach.pas)), modal dialogs, and separate forms where that fits the task.
+
+## Modern design (not retro chrome)
+
+- Visual polish comes from the **LCA Design System** and **LcaTheme** (dark/light, themed controls, tab bars, markdown views)—see [`lazarus-visual-designer.mdc`](lazarus-visual-designer.mdc).
+- **“Old school”** here means **structure and interaction model** (forms, menus, docking, native widgets)—not unstyled or legacy-looking UI.
+
+## Do / don’t for agents
+
+**Do:**
+
+- Add or extend **`frm*.pas` / `.lfm`** for new settings or focused user flows.
+- Wire new UI from the **main menu**, toolbar, or established entry points.
+- Keep geometry and hierarchy in the **Form Designer** (`.lfm`); follow layout rules in [`lazarus-lcl-layout.mdc`](lazarus-lcl-layout.mdc).
+
+**Don’t:**
+
+- Default to one full-window “settings page,” client-side **routes**, or SPA-style navigation inside the main content unless the user explicitly asks.
+- Use Electron-only metaphors (hamburger-only nav, everything inline in a single surface) as the primary pattern.
+- Replace **form-based** app configuration with a single embedded browser page for settings.
+
+## Related rules
+
+- **Implementation:** [`lazarus-visual-designer.mdc`](lazarus-visual-designer.mdc) — `.lfm`, LCA components, theming.
+- **User-visible changes:** [`user-help.mdc`](user-help.mdc) — update in-app User Guide when behavior changes.

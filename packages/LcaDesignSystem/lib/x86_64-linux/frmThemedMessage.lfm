@@ -1,0 +1,70 @@
+object ThemedMessageForm: TThemedMessageForm
+  Left = 400
+  Height = 200
+  Top = 280
+  Width = 440
+  BorderIcons = [biSystemMenu]
+  BorderStyle = bsDialog
+  Caption = 'LazyCodingAgent'
+  ClientHeight = 200
+  ClientWidth = 440
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnCreate = FormCreate
+  object lblMessage: TLabel
+    Left = 16
+    Height = 120
+    Top = 16
+    Width = 408
+    Align = alClient
+    Alignment = taLeftJustify
+    BorderSpacing.Left = 16
+    BorderSpacing.Top = 16
+    BorderSpacing.Right = 16
+    BorderSpacing.Bottom = 8
+    Caption = 'Message'
+    WordWrap = True
+  end
+  object pnlFooter: TPanel
+    Left = 0
+    Height = 52
+    Top = 148
+    Width = 440
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 52
+    ClientWidth = 440
+    TabOrder = 0
+    object btnThird: TLcaPaintButton
+      Left = 16
+      Height = 28
+      Top = 12
+      Width = 80
+      Caption = 'Cancel'
+      TabOrder = 0
+      Visible = False
+      ButtonRole = tbrCancel
+    end
+    object btnSecond: TLcaPaintButton
+      Left = 256
+      Height = 28
+      Top = 12
+      Width = 80
+      Anchors = [akTop, akRight]
+      Caption = 'No'
+      TabOrder = 1
+      Visible = False
+      ButtonRole = tbrCancel
+    end
+    object btnFirst: TLcaPaintButton
+      Left = 344
+      Height = 28
+      Top = 12
+      Width = 80
+      Anchors = [akTop, akRight]
+      Caption = 'OK'
+      TabOrder = 2
+      ButtonRole = tbrPrimary
+    end
+  end
+end

@@ -1,0 +1,102 @@
+object WorkspaceRulesForm: TWorkspaceRulesForm
+  Left = 2557
+  Height = 480
+  Top = -30
+  Width = 560
+  BorderStyle = bsDialog
+  Caption = 'Project Rules'
+  ClientHeight = 480
+  ClientWidth = 560
+  Font.Name = 'Segoe UI'
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblRules: TLabel
+    Left = 16
+    Height = 45
+    Top = 12
+    Width = 528
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    Caption = 'Project Rules (.rules/) — apply to Ask, Plan, and Agent requests in this workspace.'
+    WordWrap = True
+  end
+  object lstRules: TListBox
+    Left = 16
+    Height = 336
+    Top = 64
+    Width = 528
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ItemHeight = 0
+    TabOrder = 0
+    TopIndex = -1
+    OnDblClick = lstRulesDblClick
+  end
+  object pnlActions: TPanel
+    Left = 16
+    Height = 36
+    Top = 392
+    Width = 528
+    Anchors = [akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 36
+    ClientWidth = 528
+    TabOrder = 1
+    object btnAddRule: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 0
+      Height = 28
+      Top = 4
+      Width = 90
+      Caption = '+ Add'
+      ButtonRole = tbrPrimary
+      OnClick = btnAddRuleClick
+      TabOrder = 0
+    end
+    object btnEditRule: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 96
+      Height = 28
+      Top = 4
+      Width = 90
+      Caption = 'Edit'
+      OnClick = btnEditRuleClick
+      Enabled = False
+      TabOrder = 1
+    end
+    object btnDeleteRule: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 192
+      Height = 28
+      Top = 4
+      Width = 90
+      Caption = 'Delete'
+      ButtonRole = tbrDestructive
+      OnClick = btnDeleteRuleClick
+      Enabled = False
+      TabOrder = 2
+    end
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 44
+    Top = 436
+    Width = 560
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 44
+    ClientWidth = 560
+    TabOrder = 2
+    object btnClose: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 464
+      Height = 28
+      Top = 8
+      Width = 80
+      Caption = 'Close'
+      OnClick = btnCloseClick
+      Anchors = [akTop, akRight]
+      TabOrder = 0
+    end
+  end
+end

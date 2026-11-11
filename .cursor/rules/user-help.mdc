@@ -1,0 +1,36 @@
+---
+description: Keep in-app user help (help/) aligned with product behavior
+alwaysApply: true
+---
+
+# User help maintenance
+
+LazyCodingAgent ships an in-app **User Guide** (Help menu) backed by Markdown in [`help/`](help/).
+
+## When to update help
+
+Update help whenever you change **user-visible** behavior, including:
+
+- Main menu items, panels, docking, terminal, or workspace flows ([`mainunit.pas`](mainunit.pas), [`uNavigationPanel.pas`](uNavigationPanel.pas), [`uChatPanel.pas`](uChatPanel.pas))
+- Chat modes (Ask / Plan / Agent), sessions, or debugging display ([`frmSettings.pas`](frmSettings.pas), [`uChatSessionHub.pas`](uChatSessionHub.pas))
+- Agent loop, system prompt, or execution UX ([`uAgentEngine.pas`](uAgentEngine.pas))
+- **Advertised tools** — register in [`uAgentTools.pas`](uAgentTools.pas) and document in [`help/tools-reference.md`](help/tools-reference.md); adjust mode notes in [`help/how-the-agent-works.md`](help/how-the-agent-works.md)
+- Project rules location or editor ([`uAgentRules.pas`](uAgentRules.pas), [`frmWorkspaceRules.pas`](frmWorkspaceRules.pas))
+
+## Files to touch
+
+| Change | Update |
+|--------|--------|
+| New topic or rename | `help/index.json` + new/renamed `.md` |
+| Search discoverability | `keywords` in `index.json` |
+| Tool or mode behavior | `help/tools-reference.md`, `help/how-the-agent-works.md`, often `help/chat-and-modes.md` |
+
+## Style
+
+- English, concise, educational tone (this project is meant to teach how agents and tools work).
+- Use plain Markdown in topic files (headings, lists, fenced code). The in-app Help preview is a read-only `TMemo` (raw text). No mermaid in help bodies.
+- Do not duplicate the full README; the guide is for end users and learners.
+
+## Loader
+
+[`uHelpContent.pas`](uHelpContent.pas) loads `help/index.json` from beside the executable (post-build copy via [`scripts/post-build.sh`](scripts/post-build.sh) / [`scripts/post-build.ps1`](scripts/post-build.ps1), which call [`scripts/copy-help.sh`](scripts/copy-help.sh)). If behavior of resolution or search changes, update this rule and README building notes.

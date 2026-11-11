@@ -1,0 +1,102 @@
+object HelpForm: THelpForm
+  Left = 2474
+  Height = 1200
+  Top = 410
+  Width = 1800
+  Caption = 'User Guide'
+  ClientHeight = 1200
+  ClientWidth = 1800
+  DesignTimePPI = 192
+  Font.Name = 'Segoe UI'
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  object pnlTop: TPanel
+    Left = 0
+    Height = 112
+    Top = 0
+    Width = 1800
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 112
+    ClientWidth = 1800
+    TabOrder = 0
+    object lblSearch: TLabel
+      Left = 24
+      Height = 40
+      Top = 16
+      Width = 181
+      Caption = 'Search topics'
+    end
+    object edtSearch: TEdit
+      Left = 24
+      Height = 48
+      Top = 56
+      Width = 1752
+      Anchors = [akTop, akLeft, akRight]
+      TabOrder = 0
+      OnChange = edtSearchChange
+    end
+  end
+  object splMain: TSplitter
+    Left = 520
+    Height = 992
+    Top = 112
+    Width = 10
+  end
+  object pnlTopics: TPanel
+    Left = 0
+    Height = 992
+    Top = 112
+    Width = 520
+    Align = alLeft
+    BevelOuter = bvNone
+    ClientHeight = 992
+    ClientWidth = 520
+    TabOrder = 1
+    object lstTopics: TListBox
+      Left = 0
+      Height = 992
+      Top = 0
+      Width = 520
+      Align = alClient
+      ItemHeight = 44
+      TabOrder = 0
+      TopIndex = -1
+      OnClick = lstTopicsClick
+      OnDrawItem = lstTopicsDrawItem
+    end
+  end
+  object pnlPreviewHost: TPanel
+    Left = 530
+    Height = 992
+    Top = 112
+    Width = 1270
+    Align = alClient
+    BevelOuter = bvNone
+    TabOrder = 2
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 96
+    Top = 1104
+    Width = 1800
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 96
+    ClientWidth = 1800
+    TabOrder = 3
+    object btnClose: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 1608
+      Height = 56
+      Top = 20
+      Width = 176
+      Caption = 'Close'
+      OnClick = btnCloseClick
+      Anchors = [akTop, akRight]
+      TabOrder = 0
+    end
+  end
+end

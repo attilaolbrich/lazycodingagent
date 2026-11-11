@@ -1,0 +1,44 @@
+---
+description: Persistence layering — repositories, local SQLite/vector, remote KB/Brain APIs, future RDBMS
+alwaysApply: true
+---
+
+# Persistence and data access
+
+## SQLdb boundary
+
+- **Do not** use `TSQLConnection`, `TSQLQuery`, or `TSQLTransaction` from forms, [`mainunit.pas`](mainunit.pas), the agent engine, or existing store units (`uWorkspaceState`, `uWorkspaceRegistry`, `uChatSessionStore`, `uSyntaxSchemeRegistry`).
+- SQLdb types belong only in [`uAppDatabase.pas`](uAppDatabase.pas) (connections, migrations) and [`data/sqlite/`](data/sqlite/) repository adapters.
+
+## Repository pattern
+
+- New persistence goes behind **`I*Repository`** interfaces (see [`data/uRepositoryInterfaces.pas`](data/uRepositoryInterfaces.pas)).
+- Existing stores keep their public API; delegate to repositories in migration sprints (M1+), do not fork business logic per storage backend.
+
+## Local default (SQLite)
+
+- Static embedded SQLite via **`LazySqliteStatic`** — no system `libsqlite3` / `sqlite3.dll` at runtime.
+- Layout under `GetAppConfigDir/lazycodingagent/`: **`global.db`**, **`workspaces/<wsId>/workspace.db`**.
+- Authoritative roadmap: [`future-plan/Lazarus_Embedded_Storage_and_Vector_Plan.md`](future-plan/Lazarus_Embedded_Storage_and_Vector_Plan.md).
+
+## Local knowledge and Brain (vector)
+
+- Workspace knowledge and local Brain data use the same DB stack: **FTS5**, embedding **BLOBs**, in-process rerank (Phase A).
+- **sqlite-vec** only if Phase B profiling requires it — compile into the same static amalgamation; no Chroma/Qdrant/Docker vector servers for the desktop app.
+
+## Remote hosted services
+
+- Future paid **Knowledge Base** and **Brain** APIs implement **`IKnowledgeBackend`** / **`IBrainBackend`** (HTTP), not ad-hoc URLs in agent code.
+- Agent and UI call domain **services** (`KnowledgeService`, `BrainMemoryService` when added), which may compose local SQLite + remote backends.
+
+## Future RDBMS
+
+- PostgreSQL/MySQL are **alternate repository implementations** of the same interfaces, selected by config — never duplicate orchestration or agent logic per engine.
+
+## Migrations
+
+- Schema changes only through numbered rows in **`schema_migrations`** inside transactions — no ad-hoc `ALTER` without a migration version.
+
+## User-owned text on disk
+
+- Do not move into SQLite: `.rules/*.md`, `.plan/*.md`, repository source, shipped `help/` (see embedded storage plan).

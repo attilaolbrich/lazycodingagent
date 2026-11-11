@@ -1,0 +1,288 @@
+= TerminalEmulator
+:toc: macro
+:toclevels: 2
+:source-highlighter: pygments
+:experimental:
+
+A VT/xterm-compatible terminal emulator framework written in Free Pascal,
+with **fpGUI, LCL (Lazarus), and GTK4 (C)** front-ends. Designed as a
+reusable library: the backend, VT parser, and view widgets are independent
+units that can be composed into other applications. The GTK4 path goes
+through a C ABI shim (`libtermview.so`) so any C/C++/Vala/Rust host can
+embed it.
+
+image:https://img.shields.io/badge/license-BSD--3--Clause-blue[License]
+image:https://img.shields.io/badge/FPC-3.3.1%2B-success[FPC]
+
+toc::[]
+
+== Features
+
+* VT100 / xterm parser: SGR colors (16 / 256 / truecolor), bold / faint /
+  italic / underline / blink / inverse / hidden / strike, double-width / CJK,
+  combining marks, scroll regions, alternate buffer, sync update (`?2026`).
+* Input: mouse reporting (`?9` / `?1000` / `?1002` / `?1003`, SGR + legacy
+  encoding), bracketed paste (`?2004`), OSC 52 clipboard read/write,
+  `Shift` bypass for native selection.
+* Backends: Unix (forkpty) and Windows (ConPTY); the same Controller drives
+  either.
+* fpGUI **and** LCL widgets: scrollback, font + emoji-font fallback,
+  configurable cursor style, palette, and selection colors. Right-click
+  context menu with Copy / Paste / Font / Emoji Font. The Copy/Paste items
+  collaborate with bracketed-paste-aware apps: when the running app has
+  enabled `?2004`, Copy forwards `Ctrl+Shift+C` (CSI u) and Paste forwards
+  `Ctrl+Shift+V` so the app can run its own clipboard handlers (and answer
+  back via OSC 52). Paste enables/disables based on actual clipboard
+  contents (text — plus image formats on the LCL view).
+* `YieldRightClickToApp` property (both views): default `False` keeps the
+  context menu working even in fullscreen TUIs; set `True` to forward
+  right-clicks into a mouse-capturing app.
+* HTML export: `Core.GetHtmlSelection / GetHtmlScreen / GetHtmlAll` (and
+  the lower-level `GetHtmlRange`) produce a self-contained styled
+  document (colors, bold, italic, underline, strike, faint, inverse,
+  hidden, blink, wide cells). Soft-wrapped physical rows are joined into
+  one logical line; trailing blank cells and trailing blank rows are
+  trimmed. Page title comes from the host form. Both views expose three
+  *Copy as HTML* items (Selection / Screen / Everything).
+* Subprocess detection: `Controller.SubProcessRunning` returns `True`
+  when the shell has handed the PTY off to a foreground child (build,
+  editor, REPL). Unix-only; backed by `tcgetpgrp(master_fd)`. Both
+  example apps use it in an `OnCloseQuery` hook to confirm window-close
+  while a command is in flight.
+* Process control: `Controller.StartCommand` runs an arbitrary program
+  (not just a login shell); `Controller.SendSignal` delivers a signal to
+  the child; `Controller.ShutdownSignal` chooses the teardown signal
+  (default `SIGTERM`, `0` = let closing the PTY deliver `SIGHUP`). All
+  three are exposed over the C ABI (`tv_start_command`, `tv_send_signal`,
+  `tv_set_shutdown_signal`).
+* Overlay / keymap hooks (fpGUI **and** LCL views): `StartProgram` (run a
+  command line in the view), `OnKeyAction` (app keymap hook — consume a
+  chord before built-in handling), `OnEdgeHover` / `OnViewClick`,
+  `SetReservedRect` / `ClearReservedRect`, and `CaptureRegion` /
+  `EnsureRendered` — the building blocks for docked side panels and
+  configurable shortcuts.
+* No platform-specific paths or hardcoded debug files. Optional tracing
+  gated on env vars (see <<debug,Debug>>).
+
+== Repository layout
+
+[source]
+----
+TerminalFramework/   Core library (parser, screen model, PTY backends)
+ViewfpGUI/           fpGUI widget that renders a TTerminalController
+ViewLCL/             LCL (Lazarus) widget that renders a TTerminalController
+LibTermView/         Pascal -> C ABI shim (libtermview.so / .a + termview.h)
+ViewGtk4/            GTK4 widget written in C, built on LibTermView
+TermFpGUI/           Full fpGUI app: tabs, profiles, hover drawer, settings
+ExampleTerminal/     Minimal fpGUI demo app
+ExampleTerminalLCL/  Minimal LCL demo app (lazbuild script + pasbuild module)
+ExampleTerminalGtk4/ Minimal GTK4 demo app written in C
+tools/replay/        Trace-replay tool for parser debugging
+tools/build-win64.sh Cross-compile script for Windows x86_64
+tools/sgr-demo.sh    Bash script exercising SGR features
+Makefile             Build everything; reports per-module pass/fail summary
+----
+
+== Prerequisites
+
+* https://www.freepascal.org[Free Pascal Compiler] **3.3.1 or newer**
+  (3.2.2 may work but is untested).
+* https://github.com/graemeg/pasbuild[pasbuild] — the Maven-style build
+  tool used for module orchestration.
+* http://fpgui.sourceforge.net[fpGUI Toolkit] 2.1 or newer, installed
+  through pasbuild (the build will look for it in `~/.pasbuild/repository`)
+  — only required for the fpGUI view + example.
+* https://www.lazarus-ide.org[Lazarus / LCL] checkout — only required for
+  the LCL view + example. `Makefile` and `ViewLCL/project.xml` currently
+  point at `~/Programming/Tools/lazarus-gitlab/`; adjust to match your tree.
+* For Win64 cross-compile: FPC's `-Twin64` target (bundled with default FPC
+  on Linux; no extra mingw needed for our use).
+
+=== Installing pasbuild and fpGUI
+
+[source,shell]
+----
+# pasbuild from source
+git clone https://github.com/graemeg/pasbuild
+cd pasbuild
+./install.sh        # or follow upstream README
+
+# fpGUI as a pasbuild module
+git clone https://github.com/graemeg/fpgui
+cd fpgui/framework
+pasbuild install -p debug
+----
+
+== Building
+
+=== Linux (or any Unix)
+
+The top-level `Makefile` attempts every module and prints a pass/fail
+summary at the end (continues past failures so you can see everything in
+one run):
+
+[source,shell]
+----
+make
+./ExampleTerminal/target/exampleterminal       # fpGUI demo
+./ExampleTerminalLCL/target/exampleterminallcl # LCL demo
+----
+
+Per-module via pasbuild directly:
+
+[source,shell]
+----
+pasbuild compile -f project.xml -m TerminalFramework    -p debug
+pasbuild compile -f project.xml -m ViewfpGUI            -p debug
+pasbuild compile -f project.xml -m ViewLCL              -p debug
+pasbuild compile -f project.xml -m ExampleTerminal      -p debug
+pasbuild compile -f project.xml -m ExampleTerminalLCL   -p debug
+pasbuild compile -f project.xml -m TermFpGUI            -p debug
+----
+
+The LCL example can also be built through Lazarus tooling:
+
+[source,shell]
+----
+./ExampleTerminalLCL/build.sh   # wraps lazbuild + registers the .lpk deps
+----
+
+=== GTK4 (C) build
+
+Three pieces: a PIC-compiled Pascal shared library (`libtermview.so`), a
+GTK4 widget written in C (`libtermviewgtk4.so`), and the C demo. Each has
+its own `build.sh`; `make` chains them.
+
+[source,shell]
+----
+make gtk4
+./ExampleTerminalGtk4/target/exampleterminalgtk4
+----
+
+Requires GTK4 ≥ 4.10 (uses `GtkPopoverMenu`, `GtkScrollable`, async
+clipboard) and `pkg-config gtk4 pangocairo`. Embedders include
+`<termview.h>` (the C ABI) and/or `<term_view_widget.h>` (the widget),
+linking `-ltermview -ltermviewgtk4`.
+
+=== Windows x86_64 (cross-compile from Linux)
+
+Requires the fpGUI Win64 ppus at
+`+~/.pasbuild/repository/fpgui-framework/2.1.0/x86_64-win64-3.3.1/+`.
+Build fpGUI itself for that target first (same pasbuild command with
+`-Twin64 -Px86_64` flags appended).
+
+[source,shell]
+----
+tools/build-win64.sh
+# -> target/win64/ExampleTerminal.exe
+----
+
+The script wraps `fpc -Twin64 -Px86_64 -WG` (GUI subsystem) and is
+intentionally short -- adapt it freely.
+
+=== Native Windows build
+
+Same project files, but invoke `pasbuild` from a native FPC install. The
+Windows backend uses ConPTY, so the resulting binary requires
+**Windows 10 1809 or newer**.
+
+== Usage
+
+Embed the controller and view. fpGUI:
+
+[source,pascal]
+----
+uses Terminal.Controller, Terminal.View.fpGUI;
+
+FController := TTerminalController.Create(80, 25, 5000); { cols, rows, scrollback }
+TerminalView.AttachController(FController);
+TerminalView.StartShell;            { defaults to user's shell }
+TerminalView.StartShell('/bin/zsh'); { or an explicit path }
+----
+
+LCL — identical, just use the LCL widget. `Interfaces` must be the first
+unit in your program to select a widgetset:
+
+[source,pascal]
+----
+program MyTerm;
+uses
+  Interfaces, Forms,
+  Terminal.Controller, Terminal.View.LCL;
+
+var
+  Frm: TTerminalLCLForm;
+begin
+  Application.Initialize;
+  Application.CreateForm(TTerminalLCLForm, Frm);
+  Frm.TerminalView.AttachController(TTerminalController.Create(80, 25, 5000));
+  Frm.TerminalView.StartShell;
+  Application.Run;
+end.
+----
+
+On Windows the default-shell search order is Git Bash -> MSYS2 bash ->
+Cygwin bash -> `%COMSPEC%` (cmd.exe).
+
+== TermFpGUI — the full application
+
+Where `ExampleTerminal` is a deliberately minimal reference, `TermFpGUI`
+is the complete app built on the fpGUI view:
+
+* **Tabs** — right-click a tab for New / Close / Move to New Window;
+  `Ctrl+PgUp/PgDn` to switch. Closing the last window quits; closing a
+  non-last window keeps the app alive.
+* **Profiles & themes** — named profiles (font, fg/bg) and fpGUI styles,
+  applied live. A Settings dialog edits profiles, key bindings, and signal
+  bindings.
+* **Key bindings** — chords mapped to builtin actions (copy, paste, new /
+  close tab, switch profile, toggle drawer, …) or external commands.
+* **Signal bindings** — run an action when the program emits a terminal
+  signal (an OSC code, the bell, or a title change) — e.g. OSC 9 to a
+  desktop notification.
+* **Hover drawer** — a per-tab slide-out side panel hosting a second
+  terminal (or a custom program), revealed by hovering the configured edge
+  or a keybinding (`Ctrl+Shift+D`). Configured per profile: gravity edge,
+  size, fade/assemble/none reveal animation, launch timing, an optional
+  colour profile, and a **shutdown policy** for when the tab/window closes
+  (let it fail, send a signal, or type a key sequence).
+
+=== App mode: launch configs
+
+`--app <file.ini>` launches a single program full-screen (no tab strip)
+from a startup config, optionally with its own drawer. A trailing `--`
+passes the rest of the command line to the program:
+
+[source,shell]
+----
+termfpgui --app ~/sysmon.ini      # run a saved config (htop + a log drawer, …)
+termfpgui -- vim notes.txt        # run a one-off command (like xterm -e)
+----
+
+The `[App]` section requires `name=` (the launcher label) and accepts
+`command=`, `title=`, `theme=`, an SVG `icon=`, and all the per-profile
+drawer keys. See `TermFpGUI/example-app.ini` for an annotated template.
+
+=== Desktop integration
+
+The app ships an embedded **HVIF** vector window icon. On first run (or
+from the Settings dialog) it offers to install a per-user XDG `.desktop`
+launcher + scalable icon into `~/.local/share`. App-mode launches offer a
+launcher specific to that startup config — its own name, icon, and an
+`Exec` that re-runs the config.
+
+[[debug]]
+== Debug tracing
+
+Both traces are off by default. Enable with environment variables:
+
+`TERM_TRACE=/path/to/file`::
+Per-operation log from the screen model (cursor moves, SGR, scrolls).
+
+`TERM_RAW_TRACE=/path/to/file`::
+Raw PTY byte chunks with hex + ASCII annotations.
+Useful with `tools/replay` to deterministically reproduce a parser bug.
+
+== License
+
+BSD 3-Clause. See link:LICENSE[].

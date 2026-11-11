@@ -1,0 +1,1425 @@
+object SettingsForm: TSettingsForm
+  Left = 1522
+  Height = 1240
+  Top = 462
+  Width = 1120
+  BorderStyle = bsDialog
+  Caption = 'Settings'
+  ClientHeight = 1240
+  ClientWidth = 1120
+  DesignTimePPI = 192
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  object pnlSettingsTabsHost: TPanel
+    Left = 24
+    Height = 1112
+    Top = 24
+    Width = 1072
+    Align = alClient
+    BorderSpacing.Left = 24
+    BorderSpacing.Top = 24
+    BorderSpacing.Right = 24
+    BorderSpacing.Bottom = 16
+    BevelOuter = bvNone
+    ClientHeight = 1112
+    ClientWidth = 1072
+    TabOrder = 0
+    OnClick = pnlSettingsTabsHostClick
+    object pnlSettingsTabStripHost: TPanel
+      Left = 0
+      Height = 76
+      Top = 0
+      Width = 1072
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 76
+      ClientWidth = 1072
+      TabOrder = 0
+      object lcaSettingsTabBar: TLcaThemedPageTabBar
+        Left = 0
+        Height = 76
+        Top = 0
+        Width = 1072
+        PageControl = pgcSettings
+        ShowAddTab = False
+        AddTabCaption = '+'
+        Align = alClient
+        TabOrder = 0
+        Font.Color = 3355443
+      end
+    end
+    object pgcSettings: TPageControl
+      Left = 0
+      Height = 1036
+      Top = 76
+      Width = 1072
+      ActivePage = tsAgent
+      Align = alClient
+      ShowTabs = False
+      TabIndex = 1
+      TabOrder = 1
+      object tsProvider: TTabSheet
+        Caption = 'AI Provider & Model'
+        ClientHeight = 976
+        ClientWidth = 1068
+        object pnlTabProvider: TPanel
+          Left = 0
+          Height = 976
+          Top = 0
+          Width = 1068
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 976
+          ClientWidth = 1068
+          TabOrder = 0
+          object lblProvider: TLabel
+            Left = 32
+            Height = 36
+            Top = 32
+            Width = 172
+            Caption = 'LLM Provider'
+          end
+          object cboProvider: TLcaPaintComboBox
+            Cursor = crHandPoint
+            Left = 32
+            Height = 37
+            Top = 64
+            Width = 1008
+            ItemIndex = 0
+            ItemHeight = 36
+            Text = 'Item 1'
+            OnChange = cboProviderChange
+            TabOrder = 0
+          end
+          object lblCustomName: TLabel
+            Left = 32
+            Height = 36
+            Top = 117
+            Width = 296
+            Caption = 'Custom provider name'
+            Visible = False
+          end
+          object edtCustomName: TEdit
+            Left = 32
+            Height = 44
+            Top = 157
+            Width = 1008
+            TabOrder = 1
+            Visible = False
+          end
+          object lblApiKey: TLabel
+            Left = 32
+            Height = 36
+            Top = 216
+            Width = 240
+            Caption = 'API Key (or Secret)'
+          end
+          object edtApiKey: TEdit
+            Left = 32
+            Height = 44
+            Top = 256
+            Width = 1008
+            EchoMode = emPassword
+            PasswordChar = '*'
+            TabOrder = 2
+          end
+          object lblBaseUrl: TLabel
+            Left = 32
+            Height = 36
+            Top = 328
+            Width = 238
+            Caption = 'Base API Endpoint'
+          end
+          object edtBaseUrl: TEdit
+            Left = 32
+            Height = 44
+            Top = 368
+            Width = 1008
+            TabOrder = 3
+          end
+          object btnOpenProviderPortal: TLcaPaintButton
+            Cursor = crHandPoint
+            Left = 32
+            Height = 48
+            Top = 424
+            Width = 280
+            Caption = 'Open provider portal'
+            OnClick = btnOpenProviderPortalClick
+            Visible = False
+            TabOrder = 4
+          end
+          object lblModels: TLabel
+            Left = 32
+            Height = 36
+            Top = 488
+            Width = 445
+            Caption = 'Saved models (default = selection)'
+          end
+          object lstModels: TListBox
+            Left = 32
+            Height = 240
+            Top = 528
+            Width = 1008
+            ItemHeight = 44
+            TabOrder = 5
+            TopIndex = -1
+            OnClick = lstModelsClick
+            OnDrawItem = lstModelsDrawItem
+          end
+          object btnFetchModels: TLcaPaintButton
+            Tag = 1
+            Cursor = crHandPoint
+            Left = 32
+            Height = 56
+            Top = 907
+            Width = 240
+            Caption = 'Fetch Models...'
+            ButtonRole = tbrPrimary
+            OnClick = btnFetchModelsClick
+            TabOrder = 8
+          end
+          object btnEditModel: TLcaPaintButton
+            Cursor = crHandPoint
+            Left = 288
+            Height = 56
+            Top = 907
+            Width = 176
+            Caption = 'Edit...'
+            OnClick = btnEditModelClick
+            TabOrder = 7
+          end
+          object btnDeleteModel: TLcaPaintButton
+            Tag = 2
+            Cursor = crHandPoint
+            Left = 480
+            Height = 56
+            Top = 907
+            Width = 176
+            Caption = 'Delete'
+            ButtonRole = tbrDestructive
+            OnClick = btnDeleteModelClick
+            TabOrder = 6
+          end
+          object lblNotice: TLabel
+            Left = 48
+            Height = 84
+            Top = 784
+            Width = 1008
+            AutoSize = False
+            Caption = 'Note: Your API credentials are saved locally in the user config file but encrypted for security.'
+            WordWrap = True
+          end
+        end
+      end
+      object tsAgent: TTabSheet
+        Caption = 'Agent Behavior'
+        ClientHeight = 976
+        ClientWidth = 1068
+        object scrAgentTab: TScrollBox
+          Left = 0
+          Height = 976
+          Top = 0
+          Width = 1068
+          HorzScrollBar.Page = 1
+          HorzScrollBar.Visible = False
+          VertScrollBar.Page = 976
+          Align = alClient
+          BorderStyle = bsNone
+          ClientHeight = 976
+          ClientWidth = 1040
+          TabOrder = 0
+          object pnlTabAgent: TPanel
+            Left = 0
+            Height = 2100
+            Top = 0
+            Width = 1040
+            Align = alTop
+            BevelOuter = bvNone
+            ClientHeight = 2100
+            ClientWidth = 1040
+            TabOrder = 0
+            object pnlAgentCoreEdits: TPanel
+              Left = 0
+              Height = 420
+              Top = 0
+              Width = 1040
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 420
+              ClientWidth = 1040
+              TabOrder = 0
+              object lblTemp: TLabel
+                Left = 32
+                Height = 36
+                Top = 8
+                Width = 242
+                Caption = 'Temperature (0..1)'
+              end
+              object edtTemp: TEdit
+                Left = 32
+                Height = 44
+                Top = 48
+                Width = 992
+                TabOrder = 0
+                Text = '0.2'
+              end
+              object lblMaxTokens: TLabel
+                Left = 32
+                Height = 36
+                Top = 100
+                Width = 255
+                Caption = 'Max Output Tokens'
+              end
+              object edtMaxTokens: TEdit
+                Left = 32
+                Height = 44
+                Top = 140
+                Width = 992
+                TabOrder = 1
+                Text = '8192'
+              end
+              object lblMaxTokensHint: TLabel
+                Left = 32
+                Height = 108
+                Top = 192
+                Width = 964
+                Anchors = [akTop, akLeft, akRight]
+                AutoSize = False
+                WordWrap = True
+              end
+              object lblMaxSteps: TLabel
+                Left = 32
+                Height = 36
+                Top = 308
+                Width = 385
+                Caption = 'Max Autonomous Steps/Loop'
+              end
+              object edtMaxSteps: TEdit
+                Left = 32
+                Height = 44
+                Top = 348
+                Width = 992
+                TabOrder = 2
+                Text = '200'
+              end
+            end
+            object pnlAgentLlmNetwork: TPanel
+              Left = 0
+              Height = 280
+              Top = 420
+              Width = 1040
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 280
+              ClientWidth = 1040
+              TabOrder = 1
+              object lblLlmConnectTimeout: TLabel
+                Left = 32
+                Height = 36
+                Top = 8
+                Width = 344
+                Caption = 'LLM connect timeout (sec)'
+              end
+              object edtLlmConnectTimeoutSec: TEdit
+                Left = 32
+                Height = 44
+                Top = 48
+                Width = 992
+                TabOrder = 0
+                Text = '60'
+              end
+              object lblLlmReadTimeout: TLabel
+                Left = 32
+                Height = 36
+                Top = 100
+                Width = 424
+                Caption = 'LLM response read timeout (sec)'
+              end
+              object edtLlmReadTimeoutSec: TEdit
+                Left = 32
+                Height = 44
+                Top = 140
+                Width = 992
+                TabOrder = 1
+                Text = '600'
+              end
+              object lblLlmHttpRetries: TLabel
+                Left = 32
+                Height = 36
+                Top = 192
+                Width = 355
+                Caption = 'LLM HTTP retries on failure'
+              end
+              object edtLlmHttpRetries: TEdit
+                Left = 32
+                Height = 44
+                Top = 232
+                Width = 992
+                TabOrder = 2
+                Text = '3'
+              end
+            end
+            object pnlAgentToolCalling: TPanel
+              Left = 0
+              Height = 524
+              Top = 700
+              Width = 1040
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 524
+              ClientWidth = 1040
+              TabOrder = 2
+              object pnlAgentNativeBlock: TPanel
+                Left = 0
+                Height = 164
+                Top = 0
+                Width = 1040
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 164
+                ClientWidth = 1040
+                TabOrder = 0
+                object pnlAgentNativeRow: TPanel
+                  Left = 0
+                  Height = 48
+                  Top = 0
+                  Width = 1040
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 48
+                  ClientWidth = 1040
+                  TabOrder = 0
+                  object chkLlmNativeToolCalling: TCheckBox
+                    Left = 32
+                    Height = 29
+                    Top = 8
+                    Width = 28
+                    Checked = True
+                    State = cbChecked
+                    TabOrder = 0
+                  end
+                  object lblLlmNativeToolCalling: TLabel
+                    Cursor = crHandPoint
+                    Left = 72
+                    Height = 36
+                    Top = 8
+                    Width = 479
+                    Caption = 'Native tool calling (OpenAI tools API)'
+                    OnClick = lblAgentToggleCheckClick
+                  end
+                end
+                object lblLlmNativeToolHint: TLabel
+                  Left = 70
+                  Height = 108
+                  Top = 48
+                  Width = 970
+                  Align = alTop
+                  AutoSize = False
+                  BorderSpacing.Left = 70
+                  Caption = 'Send tool schemas in the API tools array with tool_choice auto. Disable only for providers that reject native tools.'
+                  WordWrap = True
+                end
+              end
+              object pnlAgentTextToolBlock: TPanel
+                Left = 0
+                Height = 196
+                Top = 164
+                Width = 1040
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 196
+                ClientWidth = 1040
+                TabOrder = 1
+                object pnlAgentTextToolRow: TPanel
+                  Left = 0
+                  Height = 48
+                  Top = 0
+                  Width = 1040
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 48
+                  ClientWidth = 1040
+                  TabOrder = 0
+                  object chkLlmTextToolCompat: TCheckBox
+                    Left = 32
+                    Height = 29
+                    Top = 8
+                    Width = 28
+                    TabOrder = 0
+                  end
+                  object lblLlmTextToolCompat: TLabel
+                    Cursor = crHandPoint
+                    Left = 72
+                    Height = 36
+                    Top = 8
+                    Width = 345
+                    Caption = 'Text tool-call compatibility'
+                    OnClick = lblAgentToggleCheckClick
+                  end
+                end
+                object lblLlmTextToolHint: TLabel
+                  Left = 70
+                  Height = 140
+                  Top = 48
+                  Width = 970
+                  Align = alTop
+                  AutoSize = False
+                  BorderSpacing.Left = 70
+                  Caption = 'When enabled, a single strict JSON object {name, arguments} in assistant text is treated as a tool call. Off by default; enable for local models (e.g. Ollama) that emit JSON in content.'
+                  WordWrap = True
+                end
+              end
+              object pnlAgentStreamingBlock: TPanel
+                Left = 0
+                Height = 164
+                Top = 360
+                Width = 1040
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 164
+                ClientWidth = 1040
+                TabOrder = 2
+                object pnlAgentStreamingRow: TPanel
+                  Left = 0
+                  Height = 48
+                  Top = 0
+                  Width = 1040
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 48
+                  ClientWidth = 1040
+                  TabOrder = 0
+                  object chkLlmStreamingEnabled: TCheckBox
+                    Left = 32
+                    Height = 29
+                    Top = 8
+                    Width = 28
+                    TabOrder = 0
+                  end
+                  object lblLlmStreamingEnabled: TLabel
+                    Cursor = crHandPoint
+                    Left = 72
+                    Height = 36
+                    Top = 8
+                    Width = 301
+                    Caption = 'Streaming completions'
+                    OnClick = lblAgentToggleCheckClick
+                  end
+                end
+                object lblLlmStreamingHint: TLabel
+                  Left = 70
+                  Height = 108
+                  Top = 48
+                  Width = 970
+                  Align = alTop
+                  AutoSize = False
+                  BorderSpacing.Left = 70
+                  Caption = 'Use SSE streaming for OpenAI-compatible chat completions (experimental).'
+                  WordWrap = True
+                end
+              end
+            end
+            object pnlAgentRunBehavior: TPanel
+              Left = 0
+              Height = 496
+              Top = 1224
+              Width = 1040
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 496
+              ClientWidth = 1040
+              TabOrder = 3
+              object pnlAgentDebuggingBlock: TPanel
+                Left = 0
+                Height = 164
+                Top = 0
+                Width = 1040
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 164
+                ClientWidth = 1040
+                TabOrder = 0
+                object pnlAgentDebuggingRow: TPanel
+                  Left = 0
+                  Height = 48
+                  Top = 0
+                  Width = 1040
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 48
+                  ClientWidth = 1040
+                  TabOrder = 0
+                  object chkDebuggingMode: TCheckBox
+                    Left = 32
+                    Height = 29
+                    Top = 8
+                    Width = 28
+                    TabOrder = 0
+                  end
+                  object lblDebuggingMode: TLabel
+                    Cursor = crHandPoint
+                    Left = 72
+                    Height = 36
+                    Top = 8
+                    Width = 226
+                    Caption = 'Debugging Mode'
+                    OnClick = lblAgentToggleCheckClick
+                  end
+                end
+                object lblDebuggingHint: TLabel
+                  Left = 70
+                  Height = 108
+                  Top = 48
+                  Width = 970
+                  Align = alTop
+                  AutoSize = False
+                  BorderSpacing.Left = 70
+                  Caption = 'When enabled, full tool results appear in the chat history. When disabled, only tool errors are shown.'
+                  WordWrap = True
+                end
+              end
+              object pnlAgentLearnBlock: TPanel
+                Left = 0
+                Height = 176
+                Top = 164
+                Width = 1040
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 176
+                ClientWidth = 1040
+                TabOrder = 1
+                object pnlAgentLearnRow: TPanel
+                  Left = 0
+                  Height = 48
+                  Top = 0
+                  Width = 1040
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 48
+                  ClientWidth = 1040
+                  TabOrder = 0
+                  object chkLearnMode: TCheckBox
+                    Left = 32
+                    Height = 29
+                    Top = 8
+                    Width = 28
+                    TabOrder = 0
+                  end
+                  object lblLearnMode: TLabel
+                    Cursor = crHandPoint
+                    Left = 72
+                    Height = 36
+                    Top = 8
+                    Width = 155
+                    Caption = 'Learn mode'
+                    OnClick = lblAgentToggleCheckClick
+                  end
+                end
+                object lblLearnModeHint: TLabel
+                  Left = 70
+                  Height = 120
+                  Top = 48
+                  Width = 970
+                  Align = alTop
+                  AutoSize = False
+                  BorderSpacing.Left = 70
+                  Caption = 'When enabled, each agent run switches to Tools & Logs, opens Execution Detail in the utility panel, and follows new steps until you select an older log row.'
+                  WordWrap = True
+                end
+              end
+              object pnlAgentAutoSumBlock: TPanel
+                Left = 0
+                Height = 156
+                Top = 340
+                Width = 1040
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 156
+                ClientWidth = 1040
+                TabOrder = 2
+                object pnlAgentAutoSumRow: TPanel
+                  Left = 0
+                  Height = 48
+                  Top = 0
+                  Width = 1040
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 48
+                  ClientWidth = 1040
+                  TabOrder = 0
+                  object chkAutoSummarizeContext: TCheckBox
+                    Left = 32
+                    Height = 29
+                    Top = 8
+                    Width = 28
+                    Checked = True
+                    State = cbChecked
+                    TabOrder = 0
+                  end
+                  object lblAutoSummarizeContext: TLabel
+                    Cursor = crHandPoint
+                    Left = 72
+                    Height = 36
+                    Top = 8
+                    Width = 569
+                    Caption = 'Auto-summarize when nearing context limit'
+                    OnClick = lblAgentToggleCheckClick
+                  end
+                end
+                object lblAutoSummarizeHint: TLabel
+                  Left = 70
+                  Height = 108
+                  Top = 48
+                  Width = 970
+                  Align = alTop
+                  AutoSize = False
+                  BorderSpacing.Left = 70
+                  Caption = 'When enabled, older chat turns are compressed so long sessions can continue without hitting the model context window.'
+                  WordWrap = True
+                end
+              end
+            end
+            object pnlAgentContext: TPanel
+              Left = 0
+              Height = 200
+              Top = 1720
+              Width = 1040
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 200
+              ClientWidth = 1040
+              TabOrder = 4
+              object lblContextWindow: TLabel
+                Left = 32
+                Height = 36
+                Top = 8
+                Width = 326
+                Caption = 'Context window (tokens)'
+              end
+              object edtContextWindow: TEdit
+                Left = 32
+                Height = 44
+                Top = 48
+                Width = 992
+                TabOrder = 0
+                Text = '128000'
+              end
+              object lblSummarizeThreshold: TLabel
+                Left = 32
+                Height = 36
+                Top = 100
+                Width = 276
+                Caption = 'Summarize threshold'
+              end
+              object edtSummarizeThreshold: TEdit
+                Left = 32
+                Height = 44
+                Top = 140
+                Width = 992
+                TabOrder = 1
+                Text = '0.85'
+              end
+            end
+            object pnlAgentBrowser: TPanel
+              Left = 0
+              Height = 120
+              Top = 1920
+              Width = 1040
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 120
+              ClientWidth = 1040
+              TabOrder = 5
+              object lblBrowserExecutable: TLabel
+                Left = 32
+                Height = 36
+                Top = 8
+                Width = 613
+                Caption = 'Chromium executable (browser_read, optional)'
+              end
+              object edtBrowserExecutable: TEdit
+                Left = 32
+                Height = 44
+                Top = 48
+                Width = 992
+                TabOrder = 0
+              end
+            end
+          end
+        end
+      end
+      object tsTools: TTabSheet
+        Caption = 'Tools'
+        ClientHeight = 713
+        ClientWidth = 796
+        object scrToolsTab: TScrollBox
+          Left = 0
+          Height = 713
+          Top = 0
+          Width = 796
+          HorzScrollBar.Page = 1
+          HorzScrollBar.Visible = False
+          VertScrollBar.Page = 713
+          VertScrollBar.Tracking = True
+          Align = alClient
+          BorderStyle = bsNone
+          ClientHeight = 713
+          ClientWidth = 796
+          TabOrder = 0
+          object pnlToolsContent: TPanel
+            Left = 0
+            Height = 1184
+            Top = 0
+            Width = 796
+            Align = alTop
+            BevelOuter = bvNone
+            ClientHeight = 1184
+            ClientWidth = 796
+            TabOrder = 0
+            object pnlToolsHeader: TPanel
+              Left = 0
+              Height = 368
+              Top = 0
+              Width = 796
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 368
+              ClientWidth = 796
+              TabOrder = 0
+              object wsLblWebSearchTitle: TLabel
+                Left = 16
+                Height = 40
+                Top = 8
+                Width = 176
+                Caption = 'Web Search'
+                Font.Height = -32
+                Font.Style = [fsBold]
+                ParentFont = False
+              end
+              object wsChkWebSearchEnabled: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 64
+                Width = 28
+                TabOrder = 0
+              end
+              object wsLblWebSearchEnabled: TLabel
+                Cursor = crHandPoint
+                Left = 72
+                Height = 36
+                Top = 68
+                Width = 248
+                Caption = 'Enable Web Search'
+                OnClick = wsLblToggleCheckClick
+              end
+              object wsLblMaxResults: TLabel
+                Left = 16
+                Height = 36
+                Top = 128
+                Width = 223
+                Caption = 'Maximum results'
+              end
+              object wsEdtMaxResults: TEdit
+                Left = 16
+                Height = 44
+                Top = 168
+                Width = 144
+                TabOrder = 1
+                Text = '10'
+              end
+              object wsLblTotalTimeout: TLabel
+                Left = 192
+                Height = 36
+                Top = 128
+                Width = 214
+                Caption = 'Total timeout (s)'
+              end
+              object wsEdtTotalTimeoutSec: TEdit
+                Left = 192
+                Height = 44
+                Top = 168
+                Width = 144
+                TabOrder = 2
+                Text = '30'
+              end
+              object wsChkAutoFallback: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 240
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 3
+              end
+              object wsLblAutoFallback: TLabel
+                Cursor = crHandPoint
+                Left = 72
+                Height = 36
+                Top = 244
+                Width = 244
+                Caption = 'Automatic fallback'
+                OnClick = wsLblToggleCheckClick
+              end
+              object wsChkFallbackEmpty: TCheckBox
+                Left = 560
+                Height = 29
+                Top = 240
+                Width = 28
+                TabOrder = 4
+              end
+              object wsLblFallbackEmpty: TLabel
+                Cursor = crHandPoint
+                Left = 616
+                Height = 36
+                Top = 244
+                Width = 329
+                Caption = 'Fallback on empty results'
+                OnClick = wsLblToggleCheckClick
+              end
+              object wsChkAllowPrivateInstances: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 296
+                Width = 28
+                TabOrder = 5
+              end
+              object wsLblAllowPrivateInstances: TLabel
+                Cursor = crHandPoint
+                Left = 72
+                Height = 36
+                Top = 300
+                Width = 710
+                Caption = 'Allow local/private SearXNG (localhost, 127.0.0.1, LAN)'
+                OnClick = wsLblToggleCheckClick
+              end
+            end
+            object pnlToolsConnections: TPanel
+              Left = 0
+              Height = 440
+              Top = 368
+              Width = 796
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 440
+              ClientWidth = 796
+              TabOrder = 1
+              object wsLblConnections: TLabel
+                Left = 16
+                Height = 36
+                Top = 8
+                Width = 275
+                Caption = 'Provider connections'
+              end
+              object wsLvConnections: TListView
+                Left = 16
+                Height = 376
+                Top = 56
+                Width = 791
+                Anchors = [akTop, akLeft, akRight, akBottom]
+                BorderSpacing.Bottom = 4
+                Columns = <                
+                  item
+                    Caption = 'Priority'
+                    Width = 64
+                  end                
+                  item
+                    Caption = 'Name'
+                    Width = 180
+                  end>
+                ReadOnly = True
+                RowSelect = True
+                TabOrder = 0
+                ViewStyle = vsReport
+                OnResize = wsLvConnectionsResize
+              end
+            end
+            object pnlToolsFooter: TPanel
+              Left = 0
+              Height = 376
+              Top = 808
+              Width = 796
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 376
+              ClientWidth = 796
+              TabOrder = 2
+              object pnlToolsConnButtons: TPanel
+                Left = 0
+                Height = 160
+                Top = 0
+                Width = 796
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 160
+                ClientWidth = 796
+                TabOrder = 0
+                object wsBtnAddConn: TLcaPaintButton
+                  Cursor = crHandPoint
+                  Left = 16
+                  Height = 64
+                  Top = 16
+                  Width = 144
+                  Caption = 'Add'
+                  OnClick = wsBtnAddConnClick
+                  TabOrder = 0
+                end
+                object wsBtnEditConn: TLcaPaintButton
+                  Cursor = crHandPoint
+                  Left = 176
+                  Height = 64
+                  Top = 16
+                  Width = 144
+                  Caption = 'Edit'
+                  OnClick = wsBtnEditConnClick
+                  TabOrder = 1
+                end
+                object wsBtnRemoveConn: TLcaPaintButton
+                  Cursor = crHandPoint
+                  Left = 336
+                  Height = 64
+                  Top = 16
+                  Width = 144
+                  Caption = 'Remove'
+                  OnClick = wsBtnRemoveConnClick
+                  TabOrder = 2
+                end
+                object wsBtnTestConn: TLcaPaintButton
+                  Cursor = crHandPoint
+                  Left = 496
+                  Height = 64
+                  Top = 16
+                  Width = 128
+                  Caption = 'Test'
+                  OnClick = wsBtnTestConnClick
+                  TabOrder = 3
+                end
+                object wsBtnMoveUp: TLcaPaintButton
+                  Cursor = crHandPoint
+                  Left = 16
+                  Height = 64
+                  Top = 88
+                  Width = 176
+                  Caption = 'Move Up'
+                  OnClick = wsBtnMoveUpClick
+                  TabOrder = 4
+                end
+                object wsBtnMoveDown: TLcaPaintButton
+                  Cursor = crHandPoint
+                  Left = 208
+                  Height = 64
+                  Top = 88
+                  Width = 192
+                  Caption = 'Move Down'
+                  OnClick = wsBtnMoveDownClick
+                  TabOrder = 5
+                end
+              end
+              object wsLblTestNote: TLabel
+                Left = 16
+                Height = 71
+                Top = 168
+                Width = 791
+                Anchors = [akTop, akLeft, akRight]
+                Caption = 'Connection tests may use paid API quota. Credentials are stored in your local config file.'
+                WordWrap = True
+              end
+              object wsMemoConnStatus: TMemo
+                Left = 16
+                Height = 96
+                Top = 240
+                Width = 791
+                Anchors = [akTop, akLeft, akRight, akBottom]
+                ReadOnly = True
+                ScrollBars = ssAutoVertical
+                TabOrder = 1
+              end
+            end
+          end
+        end
+      end
+      object tsPerformance: TTabSheet
+        Caption = 'Performance'
+        ClientHeight = 713
+        ClientWidth = 796
+        object scrPerformanceTab: TScrollBox
+          Left = 0
+          Height = 713
+          Top = 0
+          Width = 796
+          HorzScrollBar.Page = 1
+          HorzScrollBar.Visible = False
+          VertScrollBar.Page = 713
+          Align = alClient
+          BorderStyle = bsNone
+          ClientHeight = 713
+          ClientWidth = 796
+          TabOrder = 0
+          object pnlPerformanceContent: TPanel
+            Left = 32
+            Height = 916
+            Top = 32
+            Width = 732
+            Align = alClient
+            BorderSpacing.Around = 32
+            BevelOuter = bvNone
+            ClientHeight = 916
+            ClientWidth = 732
+            TabOrder = 0
+            object pcLblHint: TLabel
+              Left = 8
+              Height = 91
+              Top = 8
+              Width = 716
+              Align = alTop
+              AutoSize = False
+              BorderSpacing.Around = 8
+              Caption = 'Provider-side caching reduces cost and latency when supported. Cache hits are not guaranteed.'
+              WordWrap = True
+            end
+            object pcGrpMode: TLcaThemedGroupBox
+              Left = 0
+              Height = 181
+              Top = 159
+              Width = 732
+              Caption = 'Mode'
+              Align = alTop
+              TabOrder = 0
+              object pcRbAutomatic: TRadioButton
+                Left = 16
+                Height = 29
+                Top = 35
+                Width = 28
+                Checked = True
+                TabOrder = 0
+                TabStop = True
+              end
+              object pcLblRbAutomatic: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 35
+                Width = 140
+                Caption = 'Automatic'
+                OnClick = pcLblSelectRadioClick
+              end
+              object pcRbExplicit: TRadioButton
+                Left = 16
+                Height = 29
+                Top = 71
+                Width = 28
+                TabOrder = 1
+              end
+              object pcLblRbExplicit: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 71
+                Width = 346
+                Caption = 'Explicit (when supported)'
+                OnClick = pcLblSelectRadioClick
+              end
+              object pcRbDisabled: TRadioButton
+                Left = 16
+                Height = 29
+                Top = 107
+                Width = 28
+                TabOrder = 2
+              end
+              object pcLblRbDisabled: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 107
+                Width = 119
+                Caption = 'Disabled'
+                OnClick = pcLblSelectRadioClick
+              end
+            end
+            object pcLblRetention: TLabel
+              Left = 8
+              Height = 36
+              Top = 348
+              Width = 716
+              Align = alTop
+              BorderSpacing.Around = 8
+              Caption = 'Cache retention'
+            end
+            object pcCboRetention: TComboBox
+              Left = 0
+              Height = 44
+              Top = 392
+              Width = 732
+              Align = alTop
+              ItemHeight = 36
+              Items.Strings = (
+                'Provider default'
+                'Short'
+                'Extended'
+              )
+              Style = csDropDownList
+              TabOrder = 1
+            end
+            object pcGrpContent: TLcaThemedGroupBox
+              Left = 0
+              Height = 221
+              Top = 436
+              Width = 732
+              Caption = 'Cachable content'
+              Align = alTop
+              TabOrder = 2
+              object pcChkSystem: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 35
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 0
+              end
+              object pcLblChkSystem: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 35
+                Width = 267
+                Caption = 'System instructions'
+                OnClick = pcLblToggleCheckClick
+              end
+              object pcChkTools: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 71
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 1
+              end
+              object pcLblChkTools: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 71
+                Width = 209
+                Caption = 'Tool definitions'
+                OnClick = pcLblToggleCheckClick
+              end
+              object pcChkProject: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 107
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 2
+              end
+              object pcLblChkProject: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 107
+                Width = 204
+                Caption = 'Project context'
+                OnClick = pcLblToggleCheckClick
+              end
+              object pcChkHistory: TCheckBox
+                Left = 16
+                Height = 29
+                Top = 143
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 3
+              end
+              object pcLblChkHistory: TLabel
+                Cursor = crHandPoint
+                Left = 48
+                Height = 40
+                Top = 143
+                Width = 282
+                Caption = 'Conversation history'
+                OnClick = pcLblToggleCheckClick
+              end
+            end
+            object pcGrpStats: TLcaThemedGroupBox
+              Left = 0
+              Height = 259
+              Top = 657
+              Width = 732
+              Caption = 'Cache statistics (session cumulative)'
+              Align = alClient
+              TabOrder = 3
+              object pcLblInputTokens: TLabel
+                Left = 16
+                Height = 40
+                Top = 43
+                Width = 198
+                Caption = 'Input tokens: -'
+              end
+              object pcLblCachedTokens: TLabel
+                Left = 16
+                Height = 40
+                Top = 79
+                Width = 294
+                Caption = 'Cached read tokens: -'
+              end
+              object pcLblHitRatio: TLabel
+                Left = 16
+                Height = 40
+                Top = 115
+                Width = 222
+                Caption = 'Cache hit ratio: -'
+              end
+              object pcLblSavings: TLabel
+                Left = 16
+                Height = 40
+                Top = 151
+                Width = 534
+                Caption = 'Estimated savings: Provider-dependent'
+              end
+              object pcBtnResetStats: TLcaPaintButton
+                Cursor = crHandPoint
+                Left = 16
+                Height = 40
+                Top = 219
+                Width = 256
+                Caption = 'Reset statistics'
+                OnClick = pcBtnResetStatsClick
+                TabOrder = 0
+              end
+            end
+            object Panel2: TPanel
+              Left = 0
+              Height = 52
+              Top = 107
+              Width = 732
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 52
+              ClientWidth = 732
+              TabOrder = 4
+              object pcChkEnabled: TCheckBox
+                Left = 8
+                Height = 29
+                Top = 12
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 0
+              end
+              object pcLblRbAutomatic1: TLabel
+                Cursor = crHandPoint
+                Left = 53
+                Height = 36
+                Top = 12
+                Width = 204
+                Caption = 'Prompt caching'
+                OnClick = pcLblSelectRadioClick
+              end
+            end
+          end
+        end
+      end
+      object tsWorkspace: TTabSheet
+        Caption = 'Workspace'
+        ClientHeight = 713
+        ClientWidth = 796
+        object pnlTabWorkspace: TPanel
+          Left = 0
+          Height = 713
+          Top = 0
+          Width = 796
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 713
+          ClientWidth = 796
+          TabOrder = 0
+          object lblWorkspaceRoot: TLabel
+            Left = 32
+            Height = 36
+            Top = 32
+            Width = 342
+            Caption = 'Workspace Directory Root'
+          end
+          object edtWorkspaceRoot: TEdit
+            Left = 32
+            Height = 44
+            Top = 72
+            Width = 832
+            TabOrder = 0
+          end
+          object btnBrowseWorkspace: TLcaPaintButton
+            Cursor = crHandPoint
+            Left = 880
+            Height = 45
+            Top = 72
+            Width = 160
+            Caption = 'Browse...'
+            OnClick = btnBrowseWorkspaceClick
+            TabOrder = 1
+          end
+          object lblWorkspaceName: TLabel
+            Left = 32
+            Height = 36
+            Top = 152
+            Width = 227
+            Caption = 'Workspace Name'
+          end
+          object edtWorkspaceName: TEdit
+            Left = 32
+            Height = 44
+            Top = 192
+            Width = 1008
+            TabOrder = 2
+            Text = 'LazyCodingAgent'
+          end
+        end
+      end
+    end
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 88
+    Top = 1152
+    Width = 1120
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 88
+    ClientWidth = 1120
+    TabOrder = 1
+    object btnOK: TLcaPaintButton
+      Tag = 1
+      Cursor = crHandPoint
+      Left = 752
+      Height = 56
+      Top = 16
+      Width = 160
+      Caption = 'OK'
+      ButtonRole = tbrPrimary
+      OnClick = btnOKClick
+      Anchors = [akTop, akRight]
+      TabOrder = 0
+    end
+    object btnCancel: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 928
+      Height = 56
+      Top = 16
+      Width = 160
+      Caption = 'Cancel'
+      OnClick = btnCancelClick
+      Anchors = [akTop, akRight]
+      TabOrder = 1
+    end
+  end
+  object pcLblEnabled: TLabel
+    Cursor = crHandPoint
+    Left = 64
+    Height = 36
+    Top = 96
+    Width = 299
+    Caption = 'Enable prompt caching'
+    OnClick = pcLblToggleCheckClick
+  end
+end

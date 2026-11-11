@@ -1,0 +1,379 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release version
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v(.+)$') {
+            throw "Expected tag vX.Y.Z, got: $tag"
+          }
+          $version = $Matches[1]
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "Empty version after v prefix on tag: $tag"
+          }
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Release version: $version"
+
+      - name: Cache Lazarus SourceForge install
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/lazarus-ci-win64
+          key: windows-lazarus-4.8-v3-${{ hashFiles('scripts/lazarus-ci-artifacts.json', 'scripts/ci-install-lazarus-windows.ps1', 'scripts/ci-resolve-lazarus-artifact.ps1') }}
+          restore-keys: |
+            windows-lazarus-4.8-v3-
+            windows-lazarus-4.8-
+
+      - name: Install Free Pascal and Lazarus (SourceForge 4.8)
+        shell: pwsh
+        run: ./scripts/ci-install-lazarus-windows.ps1
+
+      - name: Prepare SynEdit
+        shell: pwsh
+        run: |
+          if (-not $env:LAZBUILD) {
+            $env:LAZBUILD = (Get-Command lazbuild -ErrorAction SilentlyContinue).Source
+          }
+          ./scripts/ci-prepare-lazarus-deps.ps1 -LazBuild $env:LAZBUILD
+
+      - name: Link LCA and terminal packages
+        shell: pwsh
+        run: |
+          if (-not $env:LAZBUILD) {
+            $env:LAZBUILD = (Get-Command lazbuild -ErrorAction SilentlyContinue).Source
+          }
+          & $env:LAZBUILD --version
+          ./scripts/install-lca-lazarus.ps1 -LinkOnly
+
+      - name: Install MinGW-w64 (WinLibs) for SQLite embed
+        shell: pwsh
+        run: |
+          winget install --id BrechtSanders.WinLibs.POSIX.UCRT --accept-package-agreements --accept-source-agreements --disable-interactivity 2>&1 | Out-String
+          if ($LASTEXITCODE -gt 1) { throw "winget WinLibs failed with exit $LASTEXITCODE" }
+
+      - name: Build and link static SQLite
+        shell: pwsh
+        run: ./scripts/install-lazarus-sqlite.ps1
+
+      - name: Verify SQLite embed object
+        shell: pwsh
+        run: |
+          $o = 'packages/LazySqliteStatic/src/sqlite3_embed.o'
+          if (-not (Test-Path -LiteralPath $o)) { throw "Missing $o" }
+          if ((Get-Item -LiteralPath $o).Length -lt 500000) { throw "Suspiciously small $o" }
+
+      - name: Install Python deps (owl branding)
+        run: python -m pip install --upgrade pip pillow
+
+      - name: Owl branding (BMP resource + EXE icon)
+        shell: cmd
+        run: scripts\gen-owl-branding.bat
+
+      - name: lazbuild
+        shell: pwsh
+        run: ./scripts/ci-lazbuild.ps1
+
+      - name: Post-build deploy
+        shell: pwsh
+        run: ./scripts/post-build.ps1
+
+      - name: Smoke test EXE
+        shell: pwsh
+        run: ./scripts/smoke-windows-exe.ps1
+
+      - name: Install Inno Setup (Chocolatey)
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: ./scripts/build-windows-installer.ps1 -Version $env:APP_VERSION
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/*-Setup.exe
+          if-no-files-found: error
+
+  build-linux:
+    # 22.04 apt ships Lazarus 2.2; 24.04 has Lazarus 3.0+.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v(.+)$ ]]; then
+            echo "Expected tag vX.Y.Z, got: $tag" >&2
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          if [[ -z "$version" ]]; then
+            echo "Empty version after v prefix on tag: $tag" >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Release version: $version"
+
+      - name: Qt5 release build
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/ci-linux-qt5-release-build.sh
+
+      - name: Smoke test binary (xvfb)
+        run: LCL_WIDGETSET=qt5 ./scripts/smoke-linux-binary.sh
+
+      - name: Build DEB package
+        run: ./scripts/build-linux-deb.sh
+
+      - name: Smoke test DEB package (xvfb)
+        run: ./scripts/smoke-linux-deb.sh "dist/LazyCodingAgent-${APP_VERSION}-amd64.deb"
+
+      - name: Build AppImage
+        run: ./scripts/build-linux-appimage.sh
+
+      - name: Smoke test AppImage (xvfb)
+        run: |
+          set -euo pipefail
+          APPIMAGE=(dist/*.AppImage)
+          if [[ ! -f "${APPIMAGE[0]}" ]]; then
+            echo "AppImage not found under dist/" >&2
+            exit 1
+          fi
+          chmod +x "${APPIMAGE[0]}"
+          # Brief launch under Xvfb; exit when the process ends (user closes or startup error).
+          timeout 15 xvfb-run -a env APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=xcb "${APPIMAGE[0]}" || code=$?
+          if [[ "${code:-0}" -eq 124 ]]; then
+            echo "Smoke test: app still running after 15s (OK)"
+            exit 0
+          fi
+          exit "${code:-0}"
+
+      - name: Upload Linux packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-amd64
+          path: |
+            dist/*-amd64.deb
+            dist/*.AppImage
+          if-no-files-found: error
+
+  build-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v(.+)$ ]]; then
+            echo "Expected tag vX.Y.Z, got: $tag" >&2
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          if [[ -z "$version" ]]; then
+            echo "Empty version after v prefix on tag: $tag" >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Release version: $version"
+
+      - name: Qt5 release build (aarch64)
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/ci-linux-qt5-release-build.sh
+
+      - name: Smoke test binary (xvfb)
+        run: LCL_WIDGETSET=qt5 ./scripts/smoke-linux-binary.sh
+
+      - name: Build arm64 DEB package
+        run: ./scripts/build-linux-deb.sh
+
+      - name: Smoke test arm64 DEB package (xvfb)
+        run: ./scripts/smoke-linux-deb.sh "dist/LazyCodingAgent-${APP_VERSION}-arm64.deb"
+
+      - name: Upload Linux arm64 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-linux-arm64
+          path: dist/*-arm64.deb
+          if-no-files-found: error
+
+  build-macos-aarch64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v(.+)$ ]]; then
+            echo "Expected tag vX.Y.Z, got: $tag" >&2
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          if [[ -z "$version" ]]; then
+            echo "Empty version after v prefix on tag: $tag" >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Release version: $version"
+
+      - name: Cache Lazarus SourceForge downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/lazarus-ci-aarch64
+          key: macos-lazarus-4.8-aarch64-v3-${{ hashFiles('scripts/lazarus-ci-artifacts.json', 'scripts/ci-install-lazarus-macos.sh', 'scripts/ci-resolve-lazarus-artifact.sh', 'scripts/ci-lazbuild.sh') }}
+          restore-keys: |
+            macos-lazarus-4.8-aarch64-v3-
+            macos-lazarus-4.8-
+
+      - name: Xcode / SDK (linker diagnostics)
+        run: |
+          xcodebuild -version
+          xcrun --show-sdk-path
+          if [[ -d /Applications/Xcode.app/Contents/Developer ]]; then
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          fi
+
+      - name: Install Free Pascal and Lazarus (SourceForge)
+        run: |
+          chmod +x scripts/*.sh
+          CI_MACOS_ARCH=aarch64 ./scripts/ci-install-lazarus-macos.sh
+
+      - name: Verify lazbuild --opt
+        run: |
+          "$LAZBUILD" --help | grep -F -- '--opt='
+
+      - name: macOS release build
+        run: ./scripts/ci-macos-release-build.sh
+
+      - name: Build DMG
+        run: ./scripts/build-macos-dmg.sh
+
+      - name: Smoke test app bundle
+        run: ./scripts/smoke-macos-app-bundle.sh "build/macos-bundle-aarch64/Lazy Coding Agent.app"
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-aarch64
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  build-macos-x86_64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "$tag" =~ ^v(.+)$ ]]; then
+            echo "Expected tag vX.Y.Z, got: $tag" >&2
+            exit 1
+          fi
+          version="${BASH_REMATCH[1]}"
+          if [[ -z "$version" ]]; then
+            echo "Empty version after v prefix on tag: $tag" >&2
+            exit 1
+          fi
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+          echo "Release version: $version"
+
+      - name: Cache Lazarus SourceForge downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/lazarus-ci-x86_64
+          key: macos-lazarus-4.8-x86_64-v3-${{ hashFiles('scripts/lazarus-ci-artifacts.json', 'scripts/ci-install-lazarus-macos.sh', 'scripts/ci-resolve-lazarus-artifact.sh') }}
+          restore-keys: |
+            macos-lazarus-4.8-x86_64-v3-
+            macos-lazarus-4.8-
+
+      - name: Install Free Pascal and Lazarus (SourceForge)
+        run: |
+          chmod +x scripts/*.sh
+          CI_MACOS_ARCH=x86_64 ./scripts/ci-install-lazarus-macos.sh
+
+      - name: macOS release build
+        run: ./scripts/ci-macos-release-build.sh
+
+      - name: Build DMG
+        run: ./scripts/build-macos-dmg.sh
+
+      - name: Smoke test app bundle
+        run: ./scripts/smoke-macos-app-bundle.sh "build/macos-bundle-x86_64/Lazy Coding Agent.app"
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-macos-x86_64
+          path: dist/*.dmg
+          if-no-files-found: error
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build-windows, build-linux, build-linux-aarch64, build-macos-aarch64, build-macos-x86_64]
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-windows
+          path: dist
+
+      - name: Download Linux amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-linux-amd64
+          path: dist
+
+      - name: Download Linux arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-linux-arm64
+          path: dist
+
+      - name: Download macOS aarch64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-macos-aarch64
+          path: dist
+
+      - name: Download macOS x86_64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-macos-x86_64
+          path: dist
+
+      - name: Resolve release version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          echo "APP_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: LazyCodingAgent ${{ env.APP_VERSION }}
+          files: |
+            dist/*-Setup.exe
+            dist/*.deb
+            dist/*.AppImage
+            dist/*.dmg
+          fail_on_unmatched_files: true
+          generate_release_notes: true

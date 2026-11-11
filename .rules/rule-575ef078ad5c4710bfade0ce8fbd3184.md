@@ -1,0 +1,1 @@
+The application works with multiple ad detachabe window system, the window can be pulled to different screen if detached

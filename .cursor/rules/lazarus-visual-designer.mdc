@@ -1,0 +1,67 @@
+---
+description: Lazarus IDE + LCL — designer-editable .lfm, LCA Design package, theme via LcaTheme
+alwaysApply: true
+---
+
+# Lazarus IDE-first UI
+
+## Project stack
+
+- **LazyCodingAgent** is a **Lazarus + LCL** desktop application (Free Pascal compiler under the hood).
+- **Product model:** professional native desktop UX (forms, menus, dialogs—not a single-surface Electron-style app)—see [`desktop-application-identity.mdc`](desktop-application-identity.mdc).
+- Default workflow: open `lazycodingagent.lpi` in the **Lazarus IDE**, edit forms in the **Form Designer**, build with the IDE or `lazbuild`.
+- **LCA Design system:** themed chrome lives in [`packages/LcaDesignSystem/`](packages/LcaDesignSystem/) (`LcaDesignSystem.lpk`, `LcaDesignReg` register unit). Install with [`scripts/install-lca-lazarus.ps1`](scripts/install-lca-lazarus.ps1) / [`.sh`](scripts/install-lca-lazarus.sh) (**close Lazarus first**; installs **`LcaDesignSystemDesign`** + `lazbuild --build-ide`). IDE hang recovery: [`scripts/recover-lazarus-ide.ps1`](scripts/recover-lazarus-ide.ps1). Component palette page **LCA Design** provides controls that **stream in `.lfm`**: `TLcaThemedPageTabBar`, `TLcaThemedButton`, `TLcaThemedComboBox`, `TLcaNavRailButton`, `TLcaSurfacePanel`, `TLcaMarkdownView`, `TLcaTerminalPanel`.
+- **Stock LCL** remains for menus, status bar, `TSynEdit`, memos, splitters, and dialogs where no LCA wrapper exists yet.
+- Open forms via the **`.pas`** file (F12), not a standalone `.lfm` tab.
+
+## Lazarus IDE contract (hard requirements)
+
+### Layout lives in `.lfm`
+
+- **`TForm`** uses paired **`.pas` + `.lfm`**, `{$R *.lfm}`, designer **`published`** fields, and `inherited` in constructors where applicable.
+- Use normal **`TForm.Create(Application)`** or **`Create(AOwner)`** for modal dialogs—not `CreateNew` + manual `BuildForm` for user-facing UI.
+- **Geometry and hierarchy** belong in the **`.lfm`** (`Align`, `Anchors`, tab order, captions). The **`.pas`** file holds **published** components and **event handlers** wired from the `.lfm`, plus business logic in `private` / `implementation`.
+- Do **not** build designer-owned layout with **`TXXX.Create(Self)`** + manual **`SetBounds`** / parent assignment for new LCA chrome. Drop **LCA Design** components on the form instead.
+
+### Components
+
+- **Theme tokens and tree apply:** [`packages/LcaDesignSystem/src/LcaTheme.pas`](packages/LcaDesignSystem/src/LcaTheme.pas) (`ThemePalette`, `ApplyThemedForm`, `Style*` helpers). App-specific hooks: [`uThemeHooks.pas`](uThemeHooks.pas) (SynEdit). Do **not** stream SynEdit gutter **`MarkupInfo.*`** on inline gutter parts in `.lfm` (CI/release SynEdit may reject them at form load); set gutter colors in **`uThemeHooks.pas`** only. Likewise do **not** stream newer **`TSynGutterMarks`** fields (`MaxExtraMarksColums`, `Options` / `sgmoDeDuplicateMarksOnOverflow`) — Linux release builds use distro SynEdit and fail at form load with unknown property errors.
+- **Buttons:** prefer **`TLcaThemedButton`** on the form, or stock **`TButton`** + `StylePrimaryButton` / `StyleCancelButton` / `StyleDestructiveButton` from **LcaTheme**. On **Windows**, primary/cancel/destructive fills use **LcaThemeWin32Buttons** via LcaTheme.
+- **Tabs:** **`TPageControl`** / **`TTabSheet`** with **`ShowTabs = False`**; **`TLcaThemedPageTabBar`** on tab-strip host panels (`Align = alClient`, `PageControl` set in the designer).
+- **Terminal:** **`TLcaTerminalPanel`** on the terminal content area (`StatusLabel` → status label on the form).
+- **Markdown:** **`TLcaMarkdownView`** (`TLcaThemedControl`, canvas-painted subset) for chat history, previews, and help-style hosts.
+- **Do not reintroduce** removed bespoke UI: `uCustomTabControl`, `uDockPanel`, `uAppLogo`, `fraThemedTabs`, etc. **`uPanelDetach`** is allowed for floating panels.
+
+### Published events and designer wiring
+
+- Declare **published** components and event methods on the form class. Wire `OnCreate`, `OnClick`, `OnChange`, and similar in **`.lfm`** when the designer supports it.
+- Any handler named in a `.lfm` must appear in the class **`published`** section (before `private`).
+
+### Non-visual helpers (not layout owners)
+
+- [`uNavigationPanel.pas`](uNavigationPanel.pas) — `TNavContentControl` binds to streamed nav labels, lists, tree, and buttons on `mainunit`.
+- [`uChatPanel.pas`](uChatPanel.pas) — `TChatPanel` binds to streamed chat labels, `pnlChatHistoryHost` / **`TLcaMarkdownView`**, prompt memo, combos, and buttons.
+- [`uMainFileEditor.pas`](uMainFileEditor.pas) / [`uPlanView.pas`](uPlanView.pas) — logic for streamed `TSynEdit` and plan utility controls.
+
+Do **not** add new `TPanel` subclasses in the app that `Create` child controls in Pascal; add them to **LcaDesignSystem** and register on the palette.
+
+## Main form layout ([`mainunit.lfm`](mainunit.lfm))
+
+- **Nav rail:** `TSpeedButton` or **`TLcaNavRailButton`** per item; map tags to `TNavigationItem` in code.
+- **Center `TPageControl`:** Chat ( **`TLcaMarkdownView`** history), Editor (`TSynEdit`), Markdown preview hosts.
+- **Tab bars:** **`TLcaThemedPageTabBar`** on `pnl*TabStripHost` panels.
+- **Terminal:** **`TLcaTerminalPanel`** inside `pnlTerminalContent`.
+
+Prefer editing [`mainunit.lfm`](mainunit.lfm) in the Form Designer (Align-based panel hosts). [`scripts/gen-main-lfm.py`](scripts/gen-main-lfm.py) is a legacy nav-rail scaffold—do not regenerate over the live `.lfm` unless the script body matches current chrome/chat layout.
+
+## Theming (dark and light)
+
+- Do **not** hardcode theme colors in `.lfm`. Runtime applies **LcaTheme**: `ApplyAllThemes`, `ApplyThemedControlTree`, `ThemePalette`, `StyleComboBox`, etc.
+- Chat history, Markdown preview, and Help use **`TLcaMarkdownView`**.
+
+## When adding UI
+
+1. Install/update **LCA Design** packages if new component types were added.
+2. Add or extend layout in the **Form Designer** (`.lfm`), usually [`mainunit.lfm`](mainunit.lfm) or a `frm*.lfm` dialog.
+3. Wire events in `.lfm`; implement handlers in `.pas`.
+4. After changes, verify **dark and light** via **View → Toggle Light / Dark Theme** and `lazbuild lazycodingagent.lpi`.

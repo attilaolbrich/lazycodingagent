@@ -1,0 +1,66 @@
+# Lazarus / Free Pascal build output
+*.ppu
+*.o
+*.obj
+*.compiled
+*.or
+*.a
+*.so
+*.dll
+*.dylib
+*.dbg
+*.map
+*.dSYM/
+
+# Project build directories
+/lib/
+/components/lib/
+/build/
+/bin/
+/dist/
+
+# Generated application binaries
+/lazycodingagent
+/lazycodingagent.exe
+/lazycodingagent.app/
+/lazycodingagent.res
+# FPC linker temp response files (project root)
+/link*.res
+tests/link*.res
+tests/test_app_database
+
+# Lazarus IDE session and local state
+*.lps
+packagefiles.xml
+
+# Local agent sidecars (chat image attachments, etc.)
+.lca/
+
+# Local presentation exports and media
+/presentation/
+
+# Python (scripts/write_bmp_ico.py, branding helpers)
+__pycache__/
+*.py[cod]
+
+# Temporary and backup files
+/temp/
+tmp*/
+*.bak
+*.tmp
+*.~*
+*~
+/backup/*
+!/backup/README.txt
+
+# Optional local CI Lazarus/FPC downloads (see tools/lazarus-artifacts/README.md)
+/tools/lazarus-artifacts/*
+!/tools/lazarus-artifacts/README.md
+!/tools/lazarus-artifacts/.gitkeep
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Local Docker env (docker/searxng)
+docker/searxng/.env

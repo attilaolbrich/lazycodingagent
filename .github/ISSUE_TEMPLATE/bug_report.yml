@@ -1,0 +1,96 @@
+name: Bug report
+description: Something is broken or behaves incorrectly
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. For security issues, use
+        [private vulnerability reporting](https://github.com/olbrichattila/lazycodingagent/security/advisories/new)
+        instead of this form.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear, short description of the problem
+      placeholder: What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps so we can see the same behavior
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag (e.g. v0.1.0), installer name, or commit if built from source
+      placeholder: v0.1.0 or main @ abc1234
+    validations:
+      required: true
+
+  - type: dropdown
+    id: widgetset
+    attributes:
+      label: LCL widgetset (if UI-related)
+      description: Leave blank or pick N/A if not applicable
+      options:
+        - N/A
+        - Qt5 (Linux)
+        - GTK2 / GTK3 (Linux)
+        - Win32 (Windows)
+        - Cocoa (macOS)
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste relevant log lines or attach screenshots
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+    validations:
+      required: false

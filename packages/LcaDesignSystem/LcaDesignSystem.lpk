@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <Name Value="LcaDesignSystem"/>
+    <Type Value="RunTimeOnly"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="src"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="Lazy Coding Agent design system — themed LCL components"/>
+    <Version Major="0" Minor="1" Release="0"/>
+    <Files>
+      <Item>
+        <Filename Value="src\LcaUiPaintProfile.pas"/>
+        <UnitName Value="LcaUiPaintProfile"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaUiScrollBuffer.pas"/>
+        <UnitName Value="LcaUiScrollBuffer"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaPaintPrimitives.pas"/>
+        <UnitName Value="LcaPaintPrimitives"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaTheme.pas"/>
+        <UnitName Value="LcaTheme"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedButtonPaint.pas"/>
+        <UnitName Value="LcaThemedButtonPaint"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemeWin32Buttons.pas"/>
+        <UnitName Value="LcaThemeWin32Buttons"/>
+      </Item>
+      <Item>
+        <Filename Value="src\frmThemedMessage.pas"/>
+        <HasResources Value="True"/>
+        <UnitName Value="frmThemedMessage"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedMessageBox.pas"/>
+        <UnitName Value="LcaThemedMessageBox"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemeWin32Combo.pas"/>
+        <UnitName Value="LcaThemeWin32Combo"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedGroupBox.pas"/>
+        <UnitName Value="LcaThemedGroupBox"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedPageTabBar.pas"/>
+        <UnitName Value="LcaThemedPageTabBar"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedButton.pas"/>
+        <UnitName Value="LcaThemedButton"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedComboBox.pas"/>
+        <UnitName Value="LcaThemedComboBox"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedControl.pas"/>
+        <UnitName Value="LcaThemedControl"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaNavRailButton.pas"/>
+        <UnitName Value="LcaNavRailButton"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaSurfacePanel.pas"/>
+        <UnitName Value="LcaSurfacePanel"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaPaintSurface.pas"/>
+        <UnitName Value="LcaPaintSurface"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaPaintButton.pas"/>
+        <UnitName Value="LcaPaintButton"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaPaintNavRailButton.pas"/>
+        <UnitName Value="LcaPaintNavRailButton"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaPaintComboBox.pas"/>
+        <UnitName Value="LcaPaintComboBox"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaScrollHost.pas"/>
+        <UnitName Value="LcaScrollHost"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaPaintNavList.pas"/>
+        <UnitName Value="LcaPaintNavList"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaMarkdownView.pas"/>
+        <UnitName Value="LcaMarkdownView"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaTerminalPanel.pas"/>
+        <UnitName Value="LcaTerminalPanel"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemeHooks.pas"/>
+        <UnitName Value="LcaThemeHooks"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedMainMenu.pas"/>
+        <UnitName Value="LcaThemedMainMenu"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedMenuBar.pas"/>
+        <UnitName Value="LcaThemedMenuBar"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedMenuFlyout.pas"/>
+        <UnitName Value="LcaThemedMenuFlyout"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaOwlIconRes.pas"/>
+        <UnitName Value="LcaOwlIconRes"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedWindowButton.pas"/>
+        <UnitName Value="LcaThemedWindowButton"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaFormChrome.pas"/>
+        <UnitName Value="LcaFormChrome"/>
+      </Item>
+      <Item>
+        <Filename Value="src\LcaThemedTitleBar.pas"/>
+        <UnitName Value="LcaThemedTitleBar"/>
+      </Item>
+    </Files>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+      <Item>
+        <PackageName Value="LCL"/>
+      </Item>
+      <Item>
+        <PackageName Value="TerminalFramework"/>
+      </Item>
+      <Item>
+        <PackageName Value="ViewLCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>

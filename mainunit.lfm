@@ -1,0 +1,1526 @@
+object LazyCodingAgentForm: TLazyCodingAgentForm
+  Left = 1586
+  Height = 1606
+  Top = 286
+  Width = 2598
+  BorderStyle = bsNone
+  Caption = 'LazyCodingAgent — AI Workspace'
+  ClientHeight = 1606
+  ClientWidth = 2598
+  Constraints.MinHeight = 600
+  Constraints.MinWidth = 901
+  DesignTimePPI = 192
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  object lcaTitleBar: TLcaThemedTitleBar
+    Left = 0
+    Height = 43
+    Top = 12
+    Width = 2598
+    Align = alTop
+    BorderSpacing.Top = 12
+    BorderSpacing.Bottom = 12
+    BevelOuter = bvNone
+    ClientHeight = 43
+    ClientWidth = 2598
+    Color = 15987699
+    DoubleBuffered = True
+    Font.Color = 3355443
+    ParentBackground = False
+    ParentColor = False
+    ParentDoubleBuffered = False
+    ParentFont = False
+    TabOrder = 1
+    MainMenu = lcaMainMenu
+  end
+  object pnlMainContainer: TPanel
+    Left = 0
+    Height = 999
+    Top = 67
+    Width = 2598
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 999
+    ClientWidth = 2598
+    Color = clBtnFace
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 0
+    object pnlNavRailHost: TPanel
+      Left = 0
+      Height = 999
+      Top = 0
+      Width = 101
+      Align = alLeft
+      BevelOuter = bvNone
+      ClientHeight = 999
+      ClientWidth = 101
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 0
+      object sbtnNavToolErrors: TLcaPaintNavRailButton
+        Tag = 6
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 318
+        Width = 101
+        Caption = '⚠'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+      object sbtnNavTasks: TLcaPaintNavRailButton
+        Tag = 5
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 265
+        Width = 101
+        Caption = '☰'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+      object sbtnNavTools: TLcaPaintNavRailButton
+        Tag = 4
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 212
+        Width = 101
+        Caption = '◈'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+      object sbtnNavBots: TLcaPaintNavRailButton
+        Tag = 3
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 159
+        Width = 101
+        Caption = '✦'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+      object sbtnNavSessions: TLcaPaintNavRailButton
+        Tag = 2
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 106
+        Width = 101
+        Caption = '✉'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+      object sbtnNavProjects: TLcaPaintNavRailButton
+        Tag = 1
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 53
+        Width = 101
+        Caption = '◫'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+      object sbtnNavHome: TLcaPaintNavRailButton
+        Cursor = crHandPoint
+        Left = 0
+        Height = 53
+        Top = 0
+        Width = 101
+        Caption = '⌂'
+        OnClick = NavRailBtnClick
+        Align = alTop
+        Font.Color = 7237230
+        Font.Height = -32
+      end
+    end
+    object pnlNavHost: TPanel
+      Left = 101
+      Height = 999
+      Top = 0
+      Width = 501
+      Align = alLeft
+      BevelOuter = bvNone
+      ClientHeight = 999
+      ClientWidth = 501
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 1
+      object pnlNavChrome: TPanel
+        Left = 0
+        Height = 69
+        Top = 0
+        Width = 501
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 69
+        ClientWidth = 501
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object pnlNavChromeTitleHost: TPanel
+          Left = 0
+          Height = 69
+          Top = 0
+          Width = 362
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 362
+          Color = clBtnFace
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 0
+          object lblNavTitle: TLabel
+            Left = 16
+            Height = 69
+            Top = 0
+            Width = 335
+            Align = alClient
+            BorderSpacing.Left = 16
+            BorderSpacing.Right = 11
+            Caption = 'Navigation'
+          end
+        end
+        object pnlNavChromeActions: TPanel
+          Left = 362
+          Height = 69
+          Top = 0
+          Width = 139
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 139
+          Color = clBtnFace
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 1
+          object btnNavDetach: TLcaPaintButton
+            Cursor = crHandPoint
+            Left = 11
+            Height = 69
+            Top = 0
+            Width = 64
+            Caption = '⧉'
+            ButtonRole = tbrGhost
+            OnClick = PanelDetachClick
+            Align = alRight
+            TabOrder = 0
+          end
+          object btnNavHide: TLcaPaintButton
+            Cursor = crHandPoint
+            Left = 75
+            Height = 69
+            Top = 0
+            Width = 64
+            Caption = '✕'
+            ButtonRole = tbrGhost
+            OnClick = PanelHideClick
+            Align = alRight
+            TabOrder = 1
+          end
+        end
+      end
+      object pnlNavContent: TPanel
+        Left = 0
+        Height = 930
+        Top = 69
+        Width = 501
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 930
+        ClientWidth = 501
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object lblNavViewTitle: TLabel
+          Left = 13
+          Height = 34
+          Top = 0
+          Width = 488
+          Align = alTop
+          BorderSpacing.Left = 13
+          Caption = 'Workspaces'
+          Font.Height = -27
+          Font.Style = [fsBold]
+          ParentFont = False
+        end
+        object lblNavViewSub: TLabel
+          Left = 13
+          Height = 36
+          Top = 34
+          Width = 488
+          Align = alTop
+          BorderSpacing.Left = 13
+          Caption = 'Select a workspace'
+        end
+        object lblNavComingSoon: TLabel
+          Left = 13
+          Height = 28
+          Top = 75
+          Width = 488
+          Align = alTop
+          BorderSpacing.Left = 13
+          BorderSpacing.Top = 5
+          Caption = 'COMING SOON'
+          Font.Height = -23
+          Font.Style = [fsBold]
+          ParentFont = False
+          Visible = False
+        end
+        object btnNavPrimary: TLcaPaintButton
+          Cursor = crHandPoint
+          Left = 0
+          Height = 59
+          Top = 871
+          Width = 501
+          Caption = 'Action'
+          ButtonRole = tbrPrimary
+          Align = alBottom
+          TabOrder = 0
+        end
+        object btnNavSecondary: TLcaPaintButton
+          Cursor = crHandPoint
+          Left = 0
+          Height = 64
+          Top = 807
+          Width = 501
+          Caption = 'Secondary'
+          Align = alBottom
+          Visible = False
+          TabOrder = 1
+        end
+        object lstNavFile: TLcaPaintNavList
+          Left = 0
+          Height = 704
+          Top = 103
+          Width = 501
+          ItemHeight = 40
+          Align = alClient
+          TabOrder = 2
+        end
+        object tvNavProjects: TTreeView
+          Left = 0
+          Height = 704
+          Top = 103
+          Width = 501
+          Align = alClient
+          PopupMenu = popNavProjects
+          ReadOnly = True
+          TabOrder = 3
+          Visible = False
+          Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+        end
+        object lstNavLog: TLcaPaintNavList
+          Left = 0
+          Height = 704
+          Top = 103
+          Width = 501
+          ItemHeight = 40
+          Align = alClient
+          Visible = False
+          TabOrder = 4
+        end
+        object lstNavErrors: TLcaPaintNavList
+          Left = 0
+          Height = 704
+          Top = 103
+          Width = 501
+          ItemHeight = 40
+          Align = alClient
+          Visible = False
+          TabOrder = 5
+        end
+      end
+    end
+    object splNav: TSplitter
+      Left = 602
+      Height = 999
+      Top = 0
+      Width = 11
+      MinSize = 160
+    end
+    object pnlUtilityHost: TPanel
+      Left = 2038
+      Height = 999
+      Top = 0
+      Width = 560
+      Align = alRight
+      BevelOuter = bvNone
+      ClientHeight = 999
+      ClientWidth = 560
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 2
+      Visible = False
+      object pnlUtilityChrome: TPanel
+        Left = 0
+        Height = 69
+        Top = 0
+        Width = 560
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 69
+        ClientWidth = 560
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object pnlUtilityTabStripHost: TPanel
+          Left = 0
+          Height = 69
+          Top = 0
+          Width = 421
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 421
+          ParentBackground = False
+          TabOrder = 0
+          object lcaUtilityTabBar: TLcaThemedPageTabBar
+            Left = 0
+            Height = 69
+            Top = 0
+            Width = 421
+            PageControl = pgcUtility
+            ShowAddTab = False
+            AddTabCaption = '+'
+            Align = alClient
+            TabOrder = 0
+            Font.Color = 3355443
+          end
+        end
+        object pnlUtilityChromeActions: TPanel
+          Left = 421
+          Height = 69
+          Top = 0
+          Width = 139
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 139
+          Color = clBtnFace
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 1
+          object btnUtilityDetach: TLcaPaintButton
+            Tag = 3
+            Cursor = crHandPoint
+            Left = 11
+            Height = 69
+            Top = 0
+            Width = 64
+            Caption = '⧉'
+            ButtonRole = tbrGhost
+            OnClick = PanelDetachClick
+            Align = alRight
+            TabOrder = 0
+          end
+          object btnUtilityHide: TLcaPaintButton
+            Tag = 3
+            Cursor = crHandPoint
+            Left = 75
+            Height = 69
+            Top = 0
+            Width = 64
+            Caption = '✕'
+            ButtonRole = tbrGhost
+            OnClick = PanelHideClick
+            Align = alRight
+            TabOrder = 1
+          end
+        end
+      end
+      object pnlUtilityContent: TPanel
+        Left = 0
+        Height = 930
+        Top = 69
+        Width = 560
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 930
+        ClientWidth = 560
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object pgcUtility: TPageControl
+          Left = 0
+          Height = 930
+          Top = 0
+          Width = 560
+          ActivePage = tsUtilityExecDetail
+          Align = alClient
+          ShowTabs = False
+          TabIndex = 0
+          TabOrder = 0
+          object tsUtilityExecDetail: TTabSheet
+            Caption = 'Execution Detail'
+            ClientHeight = 926
+            ClientWidth = 556
+            object pnlUtilityExecDetailHost: TPanel
+              Left = 0
+              Height = 926
+              Top = 0
+              Width = 556
+              Align = alClient
+              BevelOuter = bvNone
+              ParentBackground = False
+              TabOrder = 0
+            end
+          end
+          object tsUtilityPlan: TTabSheet
+            Caption = 'Plan'
+            ClientHeight = 243
+            ClientWidth = 144
+            object pnlPlanDocTabStripHost: TPanel
+              Left = 0
+              Height = 69
+              Top = 165
+              Width = 144
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 69
+              ClientWidth = 144
+              ParentBackground = False
+              TabOrder = 0
+              object lcaPlanDocTabBar: TLcaThemedPageTabBar
+                Left = 0
+                Height = 69
+                Top = 0
+                Width = 144
+                ShowAddTab = False
+                AddTabCaption = '+'
+                Align = alClient
+                TabOrder = 0
+                Font.Color = 3355443
+              end
+            end
+            object pnlPlanHeader: TPanel
+              Left = 0
+              Height = 165
+              Top = 0
+              Width = 144
+              Align = alTop
+              AutoSize = True
+              BevelOuter = bvNone
+              ClientHeight = 165
+              ClientWidth = 144
+              ParentBackground = False
+              TabOrder = 1
+              object lblPlanPath: TLabel
+                Left = 11
+                Height = 36
+                Top = 11
+                Width = 122
+                Align = alTop
+                BorderSpacing.Left = 11
+                BorderSpacing.Top = 11
+                BorderSpacing.Right = 11
+                Caption = 'Plan file:'
+                WordWrap = True
+              end
+              object cboPlanModel: TLcaPaintComboBox
+                Cursor = crHandPoint
+                Left = 0
+                Height = 59
+                Top = 47
+                Width = 144
+                ItemIndex = 0
+                ItemHeight = 35
+                Text = 'Item 1'
+                Align = alTop
+                TabOrder = 0
+              end
+              object btnPlanBuild: TLcaPaintButton
+                Cursor = crHandPoint
+                Left = 0
+                Height = 59
+                Top = 106
+                Width = 144
+                Caption = 'Build'
+                ButtonRole = tbrPrimary
+                Align = alTop
+                TabOrder = 1
+              end
+            end
+            object lcaPlanBody: TLcaMarkdownView
+              Left = 0
+              Height = 9
+              Top = 234
+              Width = 144
+              Align = alClient
+              TabOrder = 2
+              TabStop = True
+            end
+          end
+        end
+      end
+    end
+    object splUtility: TSplitter
+      Left = 2027
+      Height = 999
+      Top = 0
+      Width = 11
+      Align = alRight
+      MinSize = 160
+      ResizeAnchor = akRight
+      Visible = False
+    end
+    object pnlReservedHost: TPanel
+      Left = 1456
+      Height = 999
+      Top = 0
+      Width = 571
+      Align = alRight
+      BevelOuter = bvNone
+      ClientHeight = 999
+      ClientWidth = 571
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 3
+      Visible = False
+      object pnlReservedChrome: TPanel
+        Left = 0
+        Height = 69
+        Top = 0
+        Width = 571
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 69
+        ClientWidth = 571
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object pnlReservedChromeTitleHost: TPanel
+          Left = 0
+          Height = 69
+          Top = 0
+          Width = 213
+          Align = alLeft
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 213
+          Color = clBtnFace
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 0
+          object lblReservedTitle: TLabel
+            Left = 16
+            Height = 69
+            Top = 0
+            Width = 186
+            Align = alClient
+            BorderSpacing.Left = 16
+            BorderSpacing.Right = 11
+            Caption = 'Guidelines'
+          end
+        end
+        object pnlReservedChromeActions: TPanel
+          Left = 432
+          Height = 69
+          Top = 0
+          Width = 139
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 139
+          Color = clBtnFace
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 1
+          object btnReservedDetach: TLcaPaintButton
+            Tag = 2
+            Cursor = crHandPoint
+            Left = 11
+            Height = 69
+            Top = 0
+            Width = 64
+            Caption = '⧉'
+            ButtonRole = tbrGhost
+            OnClick = PanelDetachClick
+            Align = alRight
+            TabOrder = 0
+          end
+          object btnReservedHide: TLcaPaintButton
+            Tag = 2
+            Cursor = crHandPoint
+            Left = 75
+            Height = 69
+            Top = 0
+            Width = 64
+            Caption = '✕'
+            ButtonRole = tbrGhost
+            OnClick = PanelHideClick
+            Align = alRight
+            TabOrder = 1
+          end
+        end
+      end
+      object pnlReservedContent: TPanel
+        Left = 0
+        Height = 930
+        Top = 69
+        Width = 571
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 930
+        ClientWidth = 571
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object memReserved: TMemo
+          Left = 0
+          Height = 930
+          Top = 0
+          Width = 571
+          Align = alClient
+          BorderStyle = bsNone
+          ScrollBars = ssVertical
+          TabOrder = 0
+        end
+      end
+    end
+    object splReserved: TSplitter
+      Left = 1445
+      Height = 999
+      Top = 0
+      Width = 11
+      Align = alRight
+      MinSize = 180
+      ResizeAnchor = akRight
+      Visible = False
+    end
+    object pnlChatHost: TPanel
+      Left = 613
+      Height = 999
+      Top = 0
+      Width = 832
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 999
+      ClientWidth = 832
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 5
+      object pnlChatChrome: TPanel
+        Left = 0
+        Height = 69
+        Top = 0
+        Width = 832
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 69
+        ClientWidth = 832
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object pnlCenterTabStripHost: TPanel
+          Left = 0
+          Height = 69
+          Top = 0
+          Width = 757
+          Align = alClient
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 757
+          ParentBackground = False
+          TabOrder = 0
+          object lcaCenterTabBar: TLcaThemedPageTabBar
+            Left = 0
+            Height = 69
+            Top = 0
+            Width = 757
+            PageControl = pgcCenter
+            ShowAddTab = False
+            AddTabCaption = '+'
+            Align = alClient
+            TabOrder = 0
+            Font.Color = 3355443
+          end
+        end
+        object pnlCenterChromeActions: TPanel
+          Left = 757
+          Height = 69
+          Top = 0
+          Width = 75
+          Align = alRight
+          BevelOuter = bvNone
+          ClientHeight = 69
+          ClientWidth = 75
+          Color = clBtnFace
+          ParentBackground = False
+          ParentColor = False
+          TabOrder = 1
+          object btnChatDetach: TLcaPaintButton
+            Tag = 1
+            Cursor = crHandPoint
+            Left = 0
+            Height = 69
+            Top = 0
+            Width = 75
+            Caption = '⧉'
+            ButtonRole = tbrGhost
+            OnClick = PanelDetachClick
+            Align = alClient
+            TabOrder = 0
+          end
+        end
+      end
+      object pnlCenterContent: TPanel
+        Left = 0
+        Height = 930
+        Top = 69
+        Width = 832
+        Align = alClient
+        BevelOuter = bvNone
+        ClientHeight = 930
+        ClientWidth = 832
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object pgcCenter: TPageControl
+          Left = 0
+          Height = 930
+          Top = 0
+          Width = 832
+          ActivePage = tsChat
+          Align = alClient
+          ShowTabs = False
+          TabIndex = 0
+          TabOrder = 0
+          object tsChat: TTabSheet
+            Caption = 'Chat'
+            ClientHeight = 926
+            ClientWidth = 828
+            object pnlChatSessionTabStripHost: TPanel
+              Left = 0
+              Height = 69
+              Top = 168
+              Width = 828
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 69
+              ClientWidth = 828
+              ParentBackground = False
+              TabOrder = 0
+              object lcaChatSessionTabBar: TLcaThemedPageTabBar
+                Left = 0
+                Height = 69
+                Top = 0
+                Width = 828
+                ShowAddTab = True
+                AddTabCaption = '+'
+                Align = alClient
+                TabOrder = 0
+                Font.Color = 3355443
+              end
+            end
+            object pnlChatHeader: TPanel
+              Left = 0
+              Height = 168
+              Top = 0
+              Width = 828
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 168
+              ClientWidth = 828
+              ParentBackground = False
+              TabOrder = 1
+              object lblChatHeading: TLabel
+                Left = 16
+                Height = 75
+                Top = 93
+                Width = 796
+                Align = alClient
+                Alignment = taCenter
+                BorderSpacing.Left = 16
+                BorderSpacing.Top = 11
+                BorderSpacing.Right = 16
+                Caption = 'What should we build?'
+                Font.Height = -43
+                Font.Style = [fsBold]
+                ParentFont = False
+              end
+              object lblChatSession: TLabel
+                Left = 16
+                Height = 36
+                Top = 5
+                Width = 796
+                Align = alTop
+                BorderSpacing.Left = 16
+                BorderSpacing.Top = 5
+                BorderSpacing.Right = 16
+                Caption = 'Session:'
+              end
+              object lblChatSub: TLabel
+                Left = 16
+                Height = 36
+                Top = 46
+                Width = 796
+                Align = alTop
+                BorderSpacing.Left = 16
+                BorderSpacing.Top = 5
+                BorderSpacing.Right = 16
+                BorderSpacing.Bottom = 11
+                Caption = 'Autonomous AI agent workspace'
+              end
+            end
+            object pnlChatComposer: TPanel
+              Left = 0
+              Height = 445
+              Top = 481
+              Width = 828
+              Align = alBottom
+              BevelOuter = bvNone
+              ClientHeight = 445
+              ClientWidth = 828
+              ParentBackground = False
+              TabOrder = 2
+              object lblChatWorkspaceTag: TLabel
+                Left = 11
+                Height = 43
+                Top = 11
+                Width = 806
+                Align = alTop
+                AutoSize = False
+                BorderSpacing.Around = 11
+                Caption = 'PROJECT'
+              end
+              object memChatPrompt: TMemo
+                Left = 5
+                Height = 211
+                Top = 65
+                Width = 818
+                Align = alClient
+                BorderSpacing.Around = 5
+                ScrollBars = ssVertical
+                TabOrder = 0
+              end
+              object pnlChatFooter: TPanel
+                Left = 11
+                Height = 147
+                Top = 287
+                Width = 806
+                Align = alBottom
+                BorderSpacing.Around = 11
+                BevelOuter = bvNone
+                ClientHeight = 147
+                ClientWidth = 806
+                ParentBackground = False
+                TabOrder = 1
+                object pnlChatFooterRowActions: TPanel
+                  Left = 0
+                  Height = 59
+                  Top = 0
+                  Width = 806
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 59
+                  ClientWidth = 806
+                  ParentBackground = False
+                  TabOrder = 0
+                  object pnlWrapChatAttach: TPanel
+                    Left = 149
+                    Height = 59
+                    Top = 0
+                    Width = 211
+                    Align = alLeft
+                    BevelOuter = bvNone
+                    ClientHeight = 59
+                    ClientWidth = 211
+                    ParentBackground = False
+                    TabOrder = 0
+                    object btnChatAttachImage: TLcaPaintButton
+                      Cursor = crHandPoint
+                      Left = 0
+                      Height = 59
+                      Top = 0
+                      Width = 211
+                      Caption = 'Attach image'
+                      Align = alClient
+                      TabOrder = 0
+                    end
+                  end
+                  object pnlWrapChatMode: TPanel
+                    Left = 0
+                    Height = 59
+                    Top = 0
+                    Width = 149
+                    Align = alLeft
+                    BevelOuter = bvNone
+                    ClientHeight = 59
+                    ClientWidth = 149
+                    ParentBackground = False
+                    TabOrder = 1
+                    object cboChatMode: TLcaPaintComboBox
+                      Cursor = crHandPoint
+                      Left = 0
+                      Height = 59
+                      Top = 0
+                      Width = 149
+                      ItemIndex = 0
+                      ItemHeight = 35
+                      Text = 'Item 1'
+                      Align = alClient
+                      TabOrder = 0
+                    end
+                  end
+                  object pnlWrapChatModel: TPanel
+                    Left = 360
+                    Height = 59
+                    Top = 0
+                    Width = 126
+                    Align = alClient
+                    BevelOuter = bvNone
+                    ClientHeight = 59
+                    ClientWidth = 126
+                    ParentBackground = False
+                    TabOrder = 2
+                    object cboChatModel: TLcaPaintComboBox
+                      Cursor = crHandPoint
+                      Left = 0
+                      Height = 59
+                      Top = 0
+                      Width = 126
+                      ItemIndex = 0
+                      ItemHeight = 35
+                      Text = 'Item 1'
+                      Align = alClient
+                      TabOrder = 0
+                    end
+                  end
+                  object pnlWrapChatStop: TPanel
+                    Left = 486
+                    Height = 59
+                    Top = 0
+                    Width = 123
+                    Align = alRight
+                    BevelOuter = bvNone
+                    ClientHeight = 59
+                    ClientWidth = 123
+                    ParentBackground = False
+                    TabOrder = 3
+                    object btnChatStop: TLcaPaintButton
+                      Cursor = crHandPoint
+                      Left = 0
+                      Height = 59
+                      Top = 0
+                      Width = 123
+                      Caption = 'Stop'
+                      ButtonRole = tbrDestructive
+                      Align = alClient
+                      Visible = False
+                      TabOrder = 0
+                    end
+                  end
+                  object pnlWrapChatSend: TPanel
+                    Left = 609
+                    Height = 59
+                    Top = 0
+                    Width = 197
+                    Align = alRight
+                    BevelOuter = bvNone
+                    ClientHeight = 59
+                    ClientWidth = 197
+                    ParentBackground = False
+                    TabOrder = 4
+                    object btnChatSend: TLcaPaintButton
+                      Cursor = crHandPoint
+                      Left = 0
+                      Height = 59
+                      Top = 0
+                      Width = 197
+                      Caption = 'Run Agent'
+                      ButtonRole = tbrPrimary
+                      Align = alClient
+                      TabOrder = 0
+                    end
+                  end
+                end
+                object pnlChatFooterRowCheck: TPanel
+                  Left = 0
+                  Height = 43
+                  Top = 104
+                  Width = 806
+                  Align = alBottom
+                  BevelOuter = bvNone
+                  ClientHeight = 43
+                  ClientWidth = 806
+                  ParentBackground = False
+                  TabOrder = 1
+                  object chkChatAllowModifyOutside: TCheckBox
+                    Left = 38
+                    Height = 33
+                    Top = 5
+                    Width = 28
+                    Align = alLeft
+                    BorderSpacing.Left = 11
+                    BorderSpacing.Top = 5
+                    BorderSpacing.Bottom = 5
+                    TabOrder = 0
+                    OnClick = ChkChatAllowModifyOutsideClick
+                  end
+                  object lblChatAllowModifyOutside: TLabel
+                    Cursor = crHandPoint
+                    Left = 66
+                    Height = 33
+                    Top = 5
+                    Width = 729
+                    Align = alClient
+                    BorderSpacing.Top = 5
+                    BorderSpacing.Right = 11
+                    BorderSpacing.Bottom = 5
+                    Caption = 'Allow modify outside the working directory'
+                    OnClick = LblChatAllowModifyOutsideClick
+                  end
+                  object Panel1: TPanel
+                    Left = 0
+                    Height = 43
+                    Top = 0
+                    Width = 27
+                    Align = alLeft
+                    BevelOuter = bvNone
+                    ParentBackground = False
+                    TabOrder = 1
+                  end
+                end
+              end
+            end
+            object pnlChatHistoryHost: TPanel
+              Left = 0
+              Height = 244
+              Top = 237
+              Width = 828
+              Align = alClient
+              BevelOuter = bvNone
+              ClientHeight = 244
+              ClientWidth = 828
+              ParentBackground = False
+              TabOrder = 3
+              object lcaChatHistory: TLcaMarkdownView
+                Left = 0
+                Height = 244
+                Top = 0
+                Width = 828
+                Align = alClient
+                TabOrder = 0
+                TabStop = True
+              end
+            end
+          end
+          object tsEditor: TTabSheet
+            Caption = 'Editor'
+            ClientHeight = 243
+            ClientWidth = 212
+            inline synEditor: TSynEdit
+              Left = 0
+              Height = 243
+              Top = 0
+              Width = 212
+              Align = alClient
+              Font.Height = -15
+              Font.Name = 'DejaVu Sans Mono'
+              Font.Pitch = fpFixed
+              Font.Quality = fqNonAntialiased
+              ParentColor = False
+              ParentFont = False
+              TabOrder = 0
+              Gutter.Width = 0
+              Gutter.MouseActions = <>
+              RightGutter.Width = 0
+              RightGutter.MouseActions = <>
+              Keystrokes = <>
+              MouseActions = <>
+              MouseTextActions = <>
+              MouseSelActions = <>
+              VisibleSpecialChars = [vscSpace, vscTabAtLast]
+              SelectedColor.BackPriority = 50
+              SelectedColor.ForePriority = 50
+              SelectedColor.FramePriority = 50
+              SelectedColor.BoldPriority = 50
+              SelectedColor.ItalicPriority = 50
+              SelectedColor.UnderlinePriority = 50
+              SelectedColor.StrikeOutPriority = 50
+              BracketHighlightStyle = sbhsBoth
+              BracketMatchColor.Background = clNone
+              BracketMatchColor.Foreground = clNone
+              BracketMatchColor.Style = [fsBold]
+              FoldedCodeColor.Background = clNone
+              FoldedCodeColor.Foreground = clGray
+              FoldedCodeColor.FrameColor = clGray
+              MouseLinkColor.Background = clNone
+              MouseLinkColor.Foreground = clBlue
+              LineHighlightColor.Background = clNone
+              LineHighlightColor.Foreground = clNone
+              inline SynLeftGutterPartList1: TSynGutterPartList
+              end
+            end
+          end
+          object tsMarkdown: TTabSheet
+            Caption = 'Markdown'
+            ClientHeight = 243
+            ClientWidth = 212
+            object pnlMarkdownPreviewHost: TPanel
+              Left = 0
+              Height = 243
+              Top = 0
+              Width = 212
+              Align = alClient
+              BevelOuter = bvNone
+              ParentBackground = False
+              TabOrder = 0
+            end
+          end
+        end
+      end
+    end
+  end
+  object splTerminal: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 11
+    Top = 1114
+    Width = 2598
+    Align = alBottom
+    MinSize = 120
+    ResizeAnchor = akBottom
+    Visible = False
+    OnMoved = SplTerminalMoved
+  end
+  object pnlTerminalHost: TPanel
+    Left = 0
+    Height = 440
+    Top = 1125
+    Width = 2598
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 440
+    ClientWidth = 2598
+    Color = clBtnFace
+    ParentBackground = False
+    ParentColor = False
+    TabOrder = 2
+    Visible = False
+    object pnlTerminalChrome: TPanel
+      Left = 0
+      Height = 69
+      Top = 0
+      Width = 2598
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 69
+      ClientWidth = 2598
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 0
+      object pnlTerminalChromeTitleHost: TPanel
+        Left = 0
+        Height = 69
+        Top = 0
+        Width = 213
+        Align = alLeft
+        BevelOuter = bvNone
+        ClientHeight = 69
+        ClientWidth = 213
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        object lblTerminalTitle: TLabel
+          Left = 16
+          Height = 69
+          Top = 0
+          Width = 186
+          Align = alClient
+          BorderSpacing.Left = 16
+          BorderSpacing.Right = 11
+          Caption = 'Terminal'
+        end
+      end
+      object pnlTerminalChromeActions: TPanel
+        Left = 2459
+        Height = 69
+        Top = 0
+        Width = 139
+        Align = alRight
+        BevelOuter = bvNone
+        ClientHeight = 69
+        ClientWidth = 139
+        Color = clBtnFace
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 1
+        object btnTerminalDetach: TLcaPaintButton
+          Tag = 4
+          Cursor = crHandPoint
+          Left = 11
+          Height = 69
+          Top = 0
+          Width = 64
+          Caption = '⧉'
+          ButtonRole = tbrGhost
+          OnClick = PanelDetachClick
+          Align = alRight
+          TabOrder = 0
+        end
+        object btnTerminalHide: TLcaPaintButton
+          Tag = 4
+          Cursor = crHandPoint
+          Left = 75
+          Height = 69
+          Top = 0
+          Width = 64
+          Caption = '✕'
+          ButtonRole = tbrGhost
+          OnClick = PanelHideClick
+          Align = alRight
+          TabOrder = 1
+        end
+      end
+    end
+    object pnlTerminalContent: TPanel
+      Left = 0
+      Height = 371
+      Top = 69
+      Width = 2598
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 371
+      ClientWidth = 2598
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 1
+      object lblTerminalStatus: TLabel
+        Left = 0
+        Height = 1
+        Top = 0
+        Width = 2598
+        Align = alTop
+        Color = 15987699
+        Font.Color = 7237230
+        ParentColor = False
+        ParentFont = False
+        WordWrap = True
+      end
+      object lcaTerminalPanel: TLcaTerminalPanel
+        Left = 0
+        Height = 370
+        Top = 1
+        Width = 2598
+        Align = alClient
+        BevelOuter = bvNone
+        Color = 15987699
+        ParentBackground = False
+        ParentColor = False
+        TabOrder = 0
+        StatusLabel = lblTerminalStatus
+      end
+    end
+  end
+  object pnlChatAttachmentStrip: TPanel
+    Left = 0
+    Height = 48
+    Top = 1066
+    Width = 2598
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 5
+    Visible = False
+  end
+  object StatusBar1: TStatusBar
+    Left = 0
+    Height = 41
+    Top = 1565
+    Width = 2598
+    Panels = <>
+  end
+  object popNavProjects: TPopupMenu
+    Left = 48
+    Top = 400
+    object mnuTreeOpenInApp: TMenuItem
+      Caption = 'Open in Lazy Coding Agent'
+    end
+    object mnuTreeOpenInFileManager: TMenuItem
+      Caption = 'Open in File Manager'
+    end
+    object mnuTreeOpenDefault: TMenuItem
+      Caption = 'Open with Default Application'
+    end
+  end
+  object popNavSessions: TPopupMenu
+    Left = 48
+    Top = 453
+    object mnuSessionArchive: TMenuItem
+      Caption = 'Archive Session'
+    end
+    object mnuSessionRestore: TMenuItem
+      Caption = 'Restore Session'
+    end
+    object mnuSessionDeleteSep: TMenuItem
+      Caption = '-'
+    end
+    object mnuSessionDeletePermanent: TMenuItem
+      Caption = 'Permanently Delete...'
+    end
+  end
+  object lcaMainMenu: TLcaThemedMainMenu
+    Left = 720
+    Top = 24
+    object mnuFile: TMenuItem
+      Caption = '&File'
+      object mnuFileNew: TMenuItem
+        Caption = '&New Workspace'
+        OnClick = MnuFileNewClick
+      end
+      object mnuFileOpen: TMenuItem
+        Caption = '&Open Project Folder...'
+        OnClick = MnuFileOpenClick
+      end
+      object mnuFileRemoveWorkspace: TMenuItem
+        Caption = 'Remove Workspace from &List...'
+        OnClick = MnuFileRemoveWorkspaceClick
+      end
+      object mnuFileSave: TMenuItem
+        Caption = '&Save Workspace'
+        OnClick = MnuFileSaveClick
+      end
+      object mnuFileSaveFile: TMenuItem
+        Caption = 'Save &File'
+        ShortCut = 16467
+        OnClick = MnuFileSaveFileClick
+      end
+      object mnuFileSep1: TMenuItem
+        Caption = '-'
+      end
+      object mnuFileExit: TMenuItem
+        Caption = 'E&xit'
+        OnClick = MnuFileExitClick
+      end
+    end
+    object mnuView: TMenuItem
+      Caption = '&View'
+      object mnuViewToggleTheme: TMenuItem
+        Caption = '&Toggle Light / Dark Theme'
+        OnClick = MnuViewToggleThemeClick
+      end
+      object mnuViewResetLayout: TMenuItem
+        Caption = '&Reset Layout'
+        OnClick = MnuViewResetLayoutClick
+      end
+      object mnuViewTerminal: TMenuItem
+        AutoCheck = True
+        Caption = '&Terminal'
+        OnClick = MnuViewTerminalClick
+      end
+      object mnuViewSyntaxSep: TMenuItem
+        Caption = '-'
+      end
+      object mnuViewSyntaxSchemes: TMenuItem
+        Caption = 'Syntax Highlighting &Schemes...'
+        OnClick = MnuViewSyntaxSchemesClick
+      end
+      object mnuViewActiveSchemes: TMenuItem
+        Caption = 'Active Syntax &Scheme'
+      end
+    end
+    object mnuWorkspace: TMenuItem
+      Caption = '&Workspace'
+      object mnuWorkspaceMultiAgent: TMenuItem
+        Tag = -1
+        Caption = 'Multi-Agent Workspace...'
+        OnClick = MnuWorkspaceMultiAgentClick
+      end
+      object mnuWorkspaceExecutionPlans: TMenuItem
+        Tag = -1
+        Caption = 'Execution Plans...'
+        OnClick = MnuWorkspaceExecutionPlansClick
+      end
+      object mnuWorkspaceKnowledgeBase: TMenuItem
+        Tag = -1
+        Caption = 'Workspace Knowledge Base...'
+        OnClick = MnuWorkspaceKnowledgeBaseClick
+      end
+      object mnuWorkspaceTheBrain: TMenuItem
+        Tag = -1
+        Caption = 'The Brain...'
+        OnClick = MnuWorkspaceTheBrainClick
+      end
+      object mnuWorkspaceSepRules: TMenuItem
+        Tag = -1
+        Caption = '-'
+      end
+      object mnuWorkspaceProjectRules: TMenuItem
+        Tag = -1
+        Caption = 'Project &Rules...'
+        OnClick = MnuWorkspaceProjectRulesClick
+      end
+    end
+    object mnuAgent: TMenuItem
+      Caption = '&Agent'
+      object mnuAgentClearHistory: TMenuItem
+        Caption = '&Clear Conversation'
+        OnClick = MnuAgentClearHistoryClick
+      end
+      object mnuAgentStop: TMenuItem
+        Caption = '&Stop Active Agent'
+        OnClick = MnuAgentStopClick
+      end
+    end
+    object mnuSettings: TMenuItem
+      Caption = '&Settings'
+      object mnuSettingsOptions: TMenuItem
+        Caption = '&Preferences && API Configuration...'
+        OnClick = MnuSettingsOptionsClick
+      end
+    end
+    object mnuWindow: TMenuItem
+      Caption = '&Window'
+      object mnuPanelsVisibility: TMenuItem
+        Caption = '&Panels'
+      end
+    end
+    object mnuHelp: TMenuItem
+      Caption = '&Help'
+      object mnuHelpUserGuide: TMenuItem
+        Caption = '&User Guide...'
+        ShortCut = 112
+        OnClick = MnuHelpUserGuideClick
+      end
+      object mnuHelpAbout: TMenuItem
+        Caption = '&About LazyCodingAgent...'
+        OnClick = MnuHelpAboutClick
+      end
+    end
+  end
+end

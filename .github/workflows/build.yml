@@ -1,0 +1,250 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lazarus and build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git fpc lazarus lcl fp-units-rtl fp-units-fcl fp-units-misc \
+            libgtk2.0-dev libgdk-pixbuf2.0-dev libglib2.0-dev libnotify-dev \
+            libxml2-dev libxslt1-dev xvfb
+
+      - name: Prepare SynEdit
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/ci-prepare-lazarus-deps.sh
+
+      - name: Link LCA and terminal packages
+        run: ./scripts/install-lca-lazarus.sh --link-only
+
+      - name: Build and link static SQLite
+        run: ./scripts/install-lazarus-sqlite.sh
+
+      - name: lazbuild
+        run: lazbuild lazycodingagent.lpi
+
+      - name: SQLite M0 test
+        run: |
+          lazbuild tests/test_app_database.lpi
+          ./tests/test_app_database
+
+      - name: Post-build deploy
+        run: ./scripts/post-build.sh
+
+      - name: Smoke test binary (xvfb)
+        run: ./scripts/smoke-linux-binary.sh
+
+  build-linux-aarch64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lazarus and Qt5 build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git fpc lazarus lcl fp-units-rtl fp-units-fcl fp-units-misc \
+            libqt5pas-dev qtbase5-dev \
+            libglib2.0-dev libgdk-pixbuf2.0-dev libxml2-dev libxslt1-dev xvfb
+
+      - name: Prepare SynEdit
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/ci-prepare-lazarus-deps.sh
+
+      - name: Ensure Qt5 Lazarus unit directory
+        run: ./scripts/ensure-lazarus-qt5-units-dir.sh
+
+      - name: Link LCA and terminal packages (Qt5)
+        run: ./scripts/install-lca-lazarus.sh --link-only --widgetset=qt5
+
+      - name: Build and link static SQLite
+        run: ./scripts/install-lazarus-sqlite.sh
+
+      - name: lazbuild
+        run: LCL_WIDGETSET=qt5 ./scripts/ci-lazbuild.sh lazycodingagent.lpi
+
+      - name: SQLite M0 test
+        run: |
+          LCL_WIDGETSET=qt5 ./scripts/ci-lazbuild.sh tests/test_app_database.lpi
+          ./tests/test_app_database
+
+      - name: Post-build deploy
+        run: |
+          LIB_DIR="$(./scripts/linux-fpc-target-triple.sh)"
+          LIB_DIR="lib/${LIB_DIR}"
+          ./scripts/post-build.sh . "$LIB_DIR"
+
+      - name: Smoke test binary (xvfb)
+        run: LCL_WIDGETSET=qt5 ./scripts/smoke-linux-binary.sh
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Lazarus SourceForge install
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/lazarus-ci-win64
+          key: windows-lazarus-4.8-v3-${{ hashFiles('scripts/lazarus-ci-artifacts.json', 'scripts/ci-install-lazarus-windows.ps1', 'scripts/ci-resolve-lazarus-artifact.ps1') }}
+          restore-keys: |
+            windows-lazarus-4.8-v3-
+            windows-lazarus-4.8-
+
+      - name: Install Free Pascal and Lazarus (SourceForge 4.8)
+        shell: pwsh
+        run: ./scripts/ci-install-lazarus-windows.ps1
+
+      - name: Prepare SynEdit
+        shell: pwsh
+        run: |
+          if (-not $env:LAZBUILD) {
+            $env:LAZBUILD = (Get-Command lazbuild -ErrorAction SilentlyContinue).Source
+          }
+          ./scripts/ci-prepare-lazarus-deps.ps1 -LazBuild $env:LAZBUILD
+
+      - name: Link LCA and terminal packages
+        shell: pwsh
+        run: |
+          if (-not $env:LAZBUILD) {
+            $env:LAZBUILD = (Get-Command lazbuild -ErrorAction SilentlyContinue).Source
+          }
+          & $env:LAZBUILD --version
+          ./scripts/install-lca-lazarus.ps1 -LinkOnly
+
+      - name: Install MinGW-w64 (WinLibs) for SQLite embed
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath "$env:LOCALAPPDATA/Microsoft/WinGet/Packages")) {
+            New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA/Microsoft/WinGet/Packages" | Out-Null
+          }
+          winget install --id BrechtSanders.WinLibs.POSIX.UCRT --accept-package-agreements --accept-source-agreements --disable-interactivity 2>&1 | Out-String
+          if ($LASTEXITCODE -gt 1) { throw "winget WinLibs failed with exit $LASTEXITCODE" }
+
+      - name: Build and link static SQLite
+        shell: pwsh
+        run: ./scripts/install-lazarus-sqlite.ps1
+
+      - name: Verify SQLite embed object
+        shell: pwsh
+        run: |
+          $o = 'packages/LazySqliteStatic/src/sqlite3_embed.o'
+          if (-not (Test-Path -LiteralPath $o)) { throw "Missing $o" }
+          if ((Get-Item -LiteralPath $o).Length -lt 500000) { throw "Suspiciously small $o" }
+
+      - name: Install Python deps (owl branding)
+        run: python -m pip install --upgrade pip pillow
+
+      - name: Owl branding (BMP resource + EXE icon)
+        shell: cmd
+        run: scripts\gen-owl-branding.bat
+
+      - name: lazbuild
+        shell: pwsh
+        run: ./scripts/ci-lazbuild.ps1
+
+      - name: Post-build deploy
+        shell: pwsh
+        run: ./scripts/post-build.ps1
+
+      - name: Smoke test EXE
+        shell: pwsh
+        run: ./scripts/smoke-windows-exe.ps1
+
+  build-macos-aarch64:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode / SDK (linker diagnostics)
+        run: |
+          xcodebuild -version
+          xcrun --show-sdk-path
+          if [[ -d /Applications/Xcode.app/Contents/Developer ]]; then
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          fi
+
+      - name: Cache Lazarus SourceForge downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/lazarus-ci-aarch64
+          key: macos-lazarus-4.8-aarch64-v3-${{ hashFiles('scripts/lazarus-ci-artifacts.json', 'scripts/ci-install-lazarus-macos.sh', 'scripts/ci-resolve-lazarus-artifact.sh', 'scripts/ci-lazbuild.sh') }}
+          restore-keys: |
+            macos-lazarus-4.8-aarch64-v3-
+            macos-lazarus-4.8-
+
+      - name: Install Free Pascal and Lazarus (SourceForge)
+        run: |
+          chmod +x scripts/*.sh
+          CI_MACOS_ARCH=aarch64 ./scripts/ci-install-lazarus-macos.sh
+
+      - name: Verify lazbuild --opt
+        run: |
+          "$LAZBUILD" --help | grep -F -- '--opt='
+
+      - name: Prepare SynEdit
+        run: ./scripts/ci-prepare-lazarus-deps.sh
+
+      - name: Link LCA and terminal packages
+        run: ./scripts/install-lca-lazarus.sh --link-only --widgetset=cocoa
+
+      - name: Build and link static SQLite
+        run: ./scripts/install-lazarus-sqlite.sh
+
+      - name: Darwin linker smoke test
+        run: ./scripts/ci-lazbuild.sh tests/test_app_database.lpi
+
+      - name: lazbuild
+        run: ./scripts/ci-lazbuild.sh lazycodingagent.lpi
+
+      - name: Post-build deploy
+        run: |
+          MACOS_DIR="$(./scripts/resolve-lazycodingagent-output.sh . "" build-macos-aarch64 macos-bundle-macos)"
+          ./scripts/post-build.sh . "$MACOS_DIR"
+
+  build-macos-x86_64:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Lazarus SourceForge downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/lazarus-ci-x86_64
+          key: macos-lazarus-4.8-x86_64-v3-${{ hashFiles('scripts/lazarus-ci-artifacts.json', 'scripts/ci-install-lazarus-macos.sh', 'scripts/ci-resolve-lazarus-artifact.sh') }}
+          restore-keys: |
+            macos-lazarus-4.8-x86_64-v3-
+            macos-lazarus-4.8-
+
+      - name: Install Free Pascal and Lazarus (SourceForge)
+        run: |
+          chmod +x scripts/*.sh
+          CI_MACOS_ARCH=x86_64 ./scripts/ci-install-lazarus-macos.sh
+
+      - name: Prepare SynEdit
+        run: ./scripts/ci-prepare-lazarus-deps.sh
+
+      - name: Link LCA and terminal packages
+        run: ./scripts/install-lca-lazarus.sh --link-only --widgetset=cocoa
+
+      - name: Build and link static SQLite
+        run: ./scripts/install-lazarus-sqlite.sh
+
+      - name: lazbuild
+        run: ./scripts/ci-lazbuild.sh lazycodingagent.lpi
+
+      - name: Post-build deploy
+        run: |
+          MACOS_DIR="$(./scripts/resolve-lazycodingagent-output.sh . "" build-macos-x86_64 macos-bundle-macos)"
+          ./scripts/post-build.sh . "$MACOS_DIR"

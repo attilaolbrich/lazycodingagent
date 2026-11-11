@@ -1,0 +1,79 @@
+object EditSavedModelForm: TEditSavedModelForm
+  Left = 2556
+  Height = 424
+  Top = 0
+  Width = 912
+  BorderStyle = bsDialog
+  Caption = 'Edit Model'
+  ClientHeight = 424
+  ClientWidth = 912
+  DesignTimePPI = 192
+  Font.Name = 'Segoe UI'
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblDisplayName: TLabel
+    Left = 32
+    Height = 40
+    Top = 32
+    Width = 185
+    Caption = 'Display name'
+  end
+  object edtDisplayName: TEdit
+    Left = 32
+    Height = 48
+    Top = 72
+    Width = 848
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 0
+  end
+  object lblModelId: TLabel
+    Left = 32
+    Height = 40
+    Top = 136
+    Width = 119
+    Caption = 'Model id'
+  end
+  object edtModelId: TEdit
+    Left = 32
+    Height = 48
+    Top = 176
+    Width = 848
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 1
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 88
+    Top = 336
+    Width = 912
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 88
+    ClientWidth = 912
+    TabOrder = 2
+    object btnOK: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 544
+      Height = 56
+      Top = 16
+      Width = 160
+      Caption = 'OK'
+      ButtonRole = tbrPrimary
+      OnClick = btnOKClick
+      Anchors = [akTop, akRight]
+      TabOrder = 0
+    end
+    object btnCancel: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 720
+      Height = 56
+      Top = 16
+      Width = 160
+      Caption = 'Cancel'
+      OnClick = btnCancelClick
+      Anchors = [akTop, akRight]
+      TabOrder = 1
+    end
+  end
+end

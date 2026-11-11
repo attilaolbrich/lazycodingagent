@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LazyCodingAgent
+Comment=AI coding assistant and editor
+Exec=lazycodingagent
+Icon=lazycodingagent
+Terminal=false
+Categories=Development;IDE;
+StartupWMClass=lazycodingagent

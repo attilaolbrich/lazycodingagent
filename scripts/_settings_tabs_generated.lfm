@@ -1,0 +1,566 @@
+      object tsTools: TTabSheet
+        Caption = 'Tools'
+        ClientHeight = 1032
+        ClientWidth = 1068
+          object scrToolsTab: TScrollBox
+            Left = 0
+            Height = 960
+            Top = 0
+            Width = 1068
+            HorzScrollBar.Page = 1
+            HorzScrollBar.Visible = False
+            VertScrollBar.Tracking = True
+            Align = alClient
+            BorderStyle = bsNone
+            ClientHeight = 960
+            ClientWidth = 1068
+            TabOrder = 0
+            object pnlToolsContent: TPanel
+              Left = 0
+              Height = 1184
+              Top = 0
+              Width = 1068
+              Align = alTop
+              BevelOuter = bvNone
+              ClientHeight = 1128
+              ClientWidth = 1068
+              TabOrder = 0
+              object pnlToolsHeader: TPanel
+                Left = 0
+                Height = 368
+                Top = 0
+                Width = 1068
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 368
+                ClientWidth = 1068
+                TabOrder = 0
+                object wsLblWebSearchTitle: TLabel
+                  Left = 16
+                  Height = 48
+                  Top = 8
+                  Width = 200
+                  Caption = 'Web Search'
+                  Font.Height = -32
+                  Font.Style = [fsBold]
+                  ParentFont = False
+                end
+                object wsChkWebSearchEnabled: TCheckBox
+                  Left = 16
+                  Height = 48
+                  Top = 64
+                  Width = 48
+                  TabOrder = 0
+                end
+                object wsLblWebSearchEnabled: TLabel
+                  Cursor = crHandPoint
+                  Left = 72
+                  Height = 40
+                  Top = 68
+                  Width = 400
+                  Caption = 'Enable Web Search'
+                  OnClick = wsLblToggleCheckClick
+                end
+                object wsLblMaxResults: TLabel
+                  Left = 16
+                  Height = 40
+                  Top = 128
+                  Width = 184
+                  Caption = 'Maximum results'
+                end
+                object wsEdtMaxResults: TEdit
+                  Left = 16
+                  Height = 56
+                  Top = 168
+                  Width = 144
+                  TabOrder = 1
+                  Text = '10'
+                end
+                object wsLblTotalTimeout: TLabel
+                  Left = 192
+                  Height = 40
+                  Top = 128
+                  Width = 176
+                  Caption = 'Total timeout (s)'
+                end
+                object wsEdtTotalTimeoutSec: TEdit
+                  Left = 192
+                  Height = 56
+                  Top = 168
+                  Width = 144
+                  TabOrder = 2
+                  Text = '30'
+                end
+                object wsChkAutoFallback: TCheckBox
+                  Left = 16
+                  Height = 48
+                  Top = 240
+                  Width = 48
+                  Checked = True
+                  State = cbChecked
+                  TabOrder = 3
+                end
+                object wsLblAutoFallback: TLabel
+                  Cursor = crHandPoint
+                  Left = 72
+                  Height = 40
+                  Top = 244
+                  Width = 440
+                  Caption = 'Automatic fallback'
+                  OnClick = wsLblToggleCheckClick
+                end
+                object wsChkFallbackEmpty: TCheckBox
+                  Left = 560
+                  Height = 48
+                  Top = 240
+                  Width = 48
+                  TabOrder = 4
+                end
+                object wsLblFallbackEmpty: TLabel
+                  Cursor = crHandPoint
+                  Left = 616
+                  Height = 40
+                  Top = 244
+                  Width = 520
+                  Caption = 'Fallback on empty results'
+                  OnClick = wsLblToggleCheckClick
+                end
+                object wsChkAllowPrivateInstances: TCheckBox
+                  Left = 16
+                  Height = 48
+                  Top = 296
+                  Width = 48
+                  TabOrder = 5
+                end
+                object wsLblAllowPrivateInstances: TLabel
+                  Cursor = crHandPoint
+                  Left = 72
+                  Height = 40
+                  Top = 300
+                  Width = 1320
+                  Caption = 'Allow local/private SearXNG (localhost, 127.0.0.1, LAN)'
+                  OnClick = wsLblToggleCheckClick
+                end
+              end
+              object pnlToolsConnections: TPanel
+                Left = 0
+                Height = 440
+                Top = 368
+                Width = 1068
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 440
+                ClientWidth = 1068
+                TabOrder = 1
+                object wsLblConnections: TLabel
+                  Left = 16
+                  Height = 40
+                  Top = 8
+                  Width = 280
+                  Caption = 'Provider connections'
+                end
+                object wsLvConnections: TListView
+                  Left = 16
+                  Height = 376
+                  Top = 56
+                  Width = 1408
+                  Anchors = [akTop, akLeft, akRight, akBottom]
+                  BorderSpacing.Bottom = 4
+                  Columns = <>
+                  ReadOnly = True
+                  RowSelect = True
+                  TabOrder = 0
+                  OnResize = wsLvConnectionsResize
+                  ViewStyle = vsReport
+                end
+              end
+              object pnlToolsFooter: TPanel
+                Left = 0
+                Height = 376
+                Top = 808
+                Width = 1068
+                Align = alTop
+                BevelOuter = bvNone
+                ClientHeight = 376
+                ClientWidth = 1068
+                TabOrder = 2
+                object pnlToolsConnButtons: TPanel
+                  Left = 0
+                  Height = 160
+                  Top = 0
+                  Width = 1068
+                  Align = alTop
+                  BevelOuter = bvNone
+                  ClientHeight = 160
+                  ClientWidth = 1068
+                  TabOrder = 0
+                  object wsBtnAddConn: TLcaPaintButton
+                    Left = 16
+                    Height = 64
+                    Top = 16
+                    Width = 144
+                    Caption = 'Add'
+                    TabOrder = 0
+                    OnClick = wsBtnAddConnClick
+                  end
+                  object wsBtnEditConn: TLcaPaintButton
+                    Left = 176
+                    Height = 64
+                    Top = 16
+                    Width = 144
+                    Caption = 'Edit'
+                    TabOrder = 1
+                    OnClick = wsBtnEditConnClick
+                  end
+                  object wsBtnRemoveConn: TLcaPaintButton
+                    Left = 336
+                    Height = 64
+                    Top = 16
+                    Width = 144
+                    Caption = 'Remove'
+                    TabOrder = 2
+                    OnClick = wsBtnRemoveConnClick
+                  end
+                  object wsBtnTestConn: TLcaPaintButton
+                    Left = 496
+                    Height = 64
+                    Top = 16
+                    Width = 128
+                    Caption = 'Test'
+                    TabOrder = 3
+                    OnClick = wsBtnTestConnClick
+                  end
+                  object wsBtnMoveUp: TLcaPaintButton
+                    Left = 16
+                    Height = 64
+                    Top = 88
+                    Width = 176
+                    Caption = 'Move Up'
+                    TabOrder = 4
+                    OnClick = wsBtnMoveUpClick
+                  end
+                  object wsBtnMoveDown: TLcaPaintButton
+                    Left = 208
+                    Height = 64
+                    Top = 88
+                    Width = 192
+                    Caption = 'Move Down'
+                    TabOrder = 5
+                    OnClick = wsBtnMoveDownClick
+                  end
+                end
+                object wsLblTestNote: TLabel
+                  Left = 16
+                  Height = 64
+                  Top = 168
+                  Width = 1408
+                  Anchors = [akTop, akLeft, akRight]
+                  Caption = 'Connection tests may use paid API quota. Credentials are stored in your local config file.'
+                  WordWrap = True
+                end
+                object wsMemoConnStatus: TMemo
+                  Left = 16
+                  Height = 96
+                  Top = 240
+                  Width = 1408
+                  Anchors = [akTop, akLeft, akRight, akBottom]
+                  ReadOnly = True
+                  ScrollBars = ssAutoVertical
+                  TabOrder = 1
+                end
+              end
+            end
+          end
+      end
+
+      object tsPerformance: TTabSheet
+        Caption = 'Performance'
+        ClientHeight = 1032
+        ClientWidth = 1068
+          object scrPerformanceTab: TScrollBox
+            Left = 0
+            Height = 600
+            Top = 0
+            Width = 1068
+            Align = alClient
+            BorderStyle = bsNone
+            TabOrder = 0
+            object pnlPerformanceContent: TPanel
+              Left = 0
+              Height = 900
+              Top = 0
+              Width = 1068
+              AutoSize = True
+              BevelOuter = bvNone
+              ClientHeight = 900
+              ClientWidth = 1068
+              TabOrder = 0
+              object pcLblTitle: TLabel
+                Left = 32
+                Height = 36
+                Top = 16
+                Width = 200
+                Caption = 'Prompt Caching'
+                Font.Height = -24
+                ParentFont = False
+              end
+              object pcLblHint: TLabel
+                Left = 32
+                Height = 48
+                Top = 56
+                Width = 720
+                AutoSize = True
+                Caption = 'Provider-side caching reduces cost and latency when supported. Cache hits are not guaranteed.'
+                WordWrap = True
+              end
+              object pcChkEnabled: TCheckBox
+                Left = 32
+                Height = 36
+                Top = 120
+                Width = 28
+                Checked = True
+                State = cbChecked
+                TabOrder = 0
+              end
+              object pcLblEnabled: TLabel
+                Cursor = crHandPoint
+                Left = 56
+                Height = 36
+                Top = 120
+                Width = 320
+                Caption = 'Enable prompt caching'
+                OnClick = pcLblToggleCheckClick
+              end
+              object lblPcSectionMode: TLabel
+                Left = 32
+                Height = 36
+                Top = 160
+                Width = 120
+                Caption = 'Mode'
+              end
+              object pcGrpMode: TGroupBox
+                Left = 32
+                Height = 140
+                Top = 200
+                Width = 720
+                Caption = ''
+                ClientHeight = 108
+                ClientWidth = 716
+                TabOrder = 1
+                object pcRbAutomatic: TRadioButton
+                  Left = 16
+                  Height = 36
+                  Top = 8
+                  Width = 28
+                  Checked = True
+                  TabOrder = 0
+                end
+                object pcLblRbAutomatic: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 8
+                  Width = 200
+                  Caption = 'Automatic'
+                  OnClick = pcLblSelectRadioClick
+                end
+                object pcRbExplicit: TRadioButton
+                  Left = 16
+                  Height = 36
+                  Top = 44
+                  Width = 28
+                  TabOrder = 1
+                end
+                object pcLblRbExplicit: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 44
+                  Width = 320
+                  Caption = 'Explicit (when supported)'
+                  OnClick = pcLblSelectRadioClick
+                end
+                object pcRbDisabled: TRadioButton
+                  Left = 16
+                  Height = 36
+                  Top = 80
+                  Width = 28
+                  TabOrder = 2
+                end
+                object pcLblRbDisabled: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 80
+                  Width = 200
+                  Caption = 'Disabled'
+                  OnClick = pcLblSelectRadioClick
+                end
+              end
+              object pcLblRetention: TLabel
+                Left = 32
+                Height = 36
+                Top = 324
+                Width = 140
+                Caption = 'Cache retention'
+              end
+              object pcCboRetention: TComboBox
+                Left = 32
+                Height = 44
+                Top = 360
+                Width = 360
+                ItemHeight = 32
+                Items.Strings = (
+                  'Provider default'
+                  'Short'
+                  'Extended'
+                )
+                Style = csDropDownList
+                TabOrder = 2
+                Text = 'Provider default'
+              end
+              object lblPcSectionContent: TLabel
+                Left = 32
+                Height = 36
+                Top = 412
+                Width = 280
+                Caption = 'Cacheable content'
+              end
+              object pcGrpContent: TGroupBox
+                Left = 32
+                Height = 200
+                Top = 452
+                Width = 720
+                Caption = ''
+                ClientHeight = 168
+                ClientWidth = 716
+                TabOrder = 3
+                object pcChkSystem: TCheckBox
+                  Left = 16
+                  Height = 36
+                  Top = 8
+                  Width = 28
+                  Checked = True
+                  State = cbChecked
+                  TabOrder = 0
+                end
+                object pcLblChkSystem: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 8
+                  Width = 280
+                  Caption = 'System instructions'
+                  OnClick = pcLblToggleCheckClick
+                end
+                object pcChkTools: TCheckBox
+                  Left = 16
+                  Height = 36
+                  Top = 44
+                  Width = 28
+                  Checked = True
+                  State = cbChecked
+                  TabOrder = 1
+                end
+                object pcLblChkTools: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 44
+                  Width = 280
+                  Caption = 'Tool definitions'
+                  OnClick = pcLblToggleCheckClick
+                end
+                object pcChkProject: TCheckBox
+                  Left = 16
+                  Height = 36
+                  Top = 80
+                  Width = 28
+                  Checked = True
+                  State = cbChecked
+                  TabOrder = 2
+                end
+                object pcLblChkProject: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 80
+                  Width = 280
+                  Caption = 'Project context'
+                  OnClick = pcLblToggleCheckClick
+                end
+                object pcChkHistory: TCheckBox
+                  Left = 16
+                  Height = 36
+                  Top = 116
+                  Width = 28
+                  Checked = True
+                  State = cbChecked
+                  TabOrder = 3
+                end
+                object pcLblChkHistory: TLabel
+                  Cursor = crHandPoint
+                  Left = 48
+                  Height = 36
+                  Top = 116
+                  Width = 280
+                  Caption = 'Conversation history'
+                  OnClick = pcLblToggleCheckClick
+                end
+              end
+              object lblPcSectionStats: TLabel
+                Left = 32
+                Height = 36
+                Top = 628
+                Width = 520
+                Caption = 'Cache statistics (session cumulative)'
+              end
+              object pcGrpStats: TGroupBox
+                Left = 32
+                Height = 220
+                Top = 668
+                Width = 720
+                Caption = ''
+                ClientHeight = 188
+                ClientWidth = 716
+                TabOrder = 4
+                object pcLblInputTokens: TLabel
+                  Left = 16
+                  Height = 36
+                  Top = 16
+                  Width = 680
+                  Caption = 'Input tokens: —'
+                end
+                object pcLblCachedTokens: TLabel
+                  Left = 16
+                  Height = 36
+                  Top = 52
+                  Width = 680
+                  Caption = 'Cached read tokens: —'
+                end
+                object pcLblHitRatio: TLabel
+                  Left = 16
+                  Height = 36
+                  Top = 88
+                  Width = 680
+                  Caption = 'Cache hit ratio: —'
+                end
+                object pcLblSavings: TLabel
+                  Left = 16
+                  Height = 36
+                  Top = 124
+                  Width = 680
+                  Caption = 'Estimated savings: Provider-dependent'
+                end
+                object pcBtnResetStats: TLcaPaintButton
+                  Left = 16
+                  Height = 40
+                  Top = 148
+                  Width = 160
+                  Caption = 'Reset statistics'
+                  TabOrder = 0
+                end
+              end
+            end
+          end
+      end

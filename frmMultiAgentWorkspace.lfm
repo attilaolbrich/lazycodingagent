@@ -1,0 +1,140 @@
+object MultiAgentWorkspaceForm: TMultiAgentWorkspaceForm
+  Left = 400
+  Height = 560
+  Top = 120
+  Width = 640
+  BorderStyle = bsDialog
+  Caption = 'Multi-Agent Workspace'
+  ClientHeight = 560
+  ClientWidth = 640
+  Font.Name = 'Segoe UI'
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblTitle: TLabel
+    Left = 20
+    Height = 28
+    Top = 16
+    Width = 600
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    Caption = 'Multi-Agent Workspace'
+    Font.Height = -19
+    Font.Style = [fsBold]
+  end
+  object lblComingSoon: TLabel
+    Left = 20
+    Height = 20
+    Top = 48
+    Width = 120
+    Caption = 'COMING SOON'
+  end
+  object lblSubtitle: TLabel
+    Left = 20
+    Height = 40
+    Top = 72
+    Width = 600
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    Caption = 'Preview only.'
+    WordWrap = True
+  end
+  object lblAgents: TLabel
+    Left = 20
+    Height = 20
+    Top = 120
+    Width = 100
+    Caption = 'Agent roles'
+  end
+  object lstAgents: TListBox
+    Left = 20
+    Height = 120
+    Top = 144
+    Width = 280
+    Enabled = False
+    ItemHeight = 0
+    TabOrder = 0
+  end
+  object lblWorkflow: TLabel
+    Left = 320
+    Height = 20
+    Top = 120
+    Width = 100
+    Caption = 'Workflow'
+  end
+  object cboWorkflow: TLcaPaintComboBox
+    Left = 320
+    Height = 32
+    Top = 144
+    Width = 300
+    Anchors = [akTop, akLeft, akRight]
+    Enabled = False
+    ItemHeight = 22
+    TabOrder = 1
+  end
+  object pnlActions: TPanel
+    Left = 20
+    Height = 36
+    Top = 272
+    Width = 600
+    Anchors = [akTop, akLeft, akRight]
+    BevelOuter = bvNone
+    ClientHeight = 36
+    ClientWidth = 600
+    TabOrder = 2
+    object btnAddAgent: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 0
+      Height = 28
+      Top = 4
+      Width = 120
+      Caption = '+ Add agent'
+      ButtonRole = tbrPrimary
+      Enabled = False
+      TabOrder = 0
+    end
+    object btnEditWorkflow: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 128
+      Height = 28
+      Top = 4
+      Width = 140
+      Caption = 'Edit workflow...'
+      Enabled = False
+      TabOrder = 1
+    end
+  end
+  object memRoadmap: TMemo
+    Left = 20
+    Height = 180
+    Top = 316
+    Width = 600
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ReadOnly = True
+    ScrollBars = ssAutoVertical
+    TabOrder = 3
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 52
+    Top = 508
+    Width = 640
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 52
+    ClientWidth = 640
+    TabOrder = 4
+    object btnClose: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 528
+      Height = 32
+      Top = 10
+      Width = 92
+      Anchors = [akTop, akRight]
+      Caption = 'Close'
+      ButtonRole = tbrPrimary
+      OnClick = btnCloseClick
+      TabOrder = 0
+    end
+  end
+end

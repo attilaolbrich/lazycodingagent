@@ -1,0 +1,143 @@
+object WebSearchConnectionForm: TWebSearchConnectionForm
+  Left = 400
+  Height = 520
+  Top = 200
+  Width = 640
+  BorderStyle = bsDialog
+  Caption = 'Search Provider Connection'
+  ClientHeight = 520
+  ClientWidth = 640
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblName: TLabel
+    Left = 24
+    Height = 20
+    Top = 24
+    Width = 40
+    Caption = 'Name'
+  end
+  object edtName: TEdit
+    Left = 24
+    Height = 28
+    Top = 48
+    Width = 592
+    TabOrder = 0
+  end
+  object lblProvider: TLabel
+    Left = 24
+    Height = 20
+    Top = 88
+    Width = 52
+    Caption = 'Provider'
+  end
+  object cboProvider: TLcaPaintComboBox
+    Left = 24
+    Height = 32
+    Top = 112
+    Width = 280
+    ItemHeight = 22
+    TabOrder = 1
+    OnChange = cboProviderChange
+  end
+  object lblApiKey: TLabel
+    Left = 24
+    Height = 20
+    Top = 160
+    Width = 44
+    Caption = 'API Key'
+  end
+  object edtApiKey: TEdit
+    Left = 24
+    Height = 28
+    Top = 184
+    Width = 592
+    PasswordChar = '*'
+    TabOrder = 2
+  end
+  object lblInstanceUrl: TLabel
+    Left = 24
+    Height = 20
+    Top = 224
+    Width = 78
+    Caption = 'Instance URL'
+  end
+  object edtInstanceUrl: TEdit
+    Left = 24
+    Height = 28
+    Top = 248
+    Width = 592
+    TabOrder = 3
+  end
+  object lblTavilyDepth: TLabel
+    Left = 24
+    Height = 20
+    Top = 288
+    Width = 82
+    Caption = 'Search depth'
+  end
+  object cboTavilyDepth: TLcaPaintComboBox
+    Left = 24
+    Height = 32
+    Top = 312
+    Width = 200
+    ItemHeight = 22
+    TabOrder = 4
+  end
+  object lblTimeout: TLabel
+    Left = 24
+    Height = 20
+    Top = 360
+    Width = 108
+    Caption = 'Timeout (seconds)'
+  end
+  object edtTimeout: TEdit
+    Left = 24
+    Height = 28
+    Top = 384
+    Width = 120
+    TabOrder = 5
+    Text = '10'
+  end
+  object chkEnabled: TCheckBox
+    Left = 160
+    Height = 24
+    Top = 388
+    Width = 80
+    Caption = 'Enabled'
+    Checked = True
+    State = cbChecked
+    TabOrder = 6
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 64
+    Top = 456
+    Width = 640
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 64
+    ClientWidth = 640
+    TabOrder = 7
+    object btnOK: TLcaPaintButton
+      Tag = 1
+      Left = 432
+      Height = 40
+      Top = 12
+      Width = 88
+      Caption = 'OK'
+      TabOrder = 0
+      OnClick = btnOKClick
+      ButtonRole = tbrPrimary
+    end
+    object btnCancel: TLcaPaintButton
+      Left = 528
+      Height = 40
+      Top = 12
+      Width = 88
+      Caption = 'Cancel'
+      ModalResult = 2
+      TabOrder = 1
+    end
+  end
+end

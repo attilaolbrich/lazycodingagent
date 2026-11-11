@@ -1,0 +1,2 @@
+/* Shell EXE icon (ID 1). Not MAINICON — LCL would fpImage-decode it at startup. */
+1 ICON "res/lazycodingagent.ico"

@@ -1,0 +1,103 @@
+object SyntaxSchemesForm: TSyntaxSchemesForm
+  Left = 2557
+  Height = 460
+  Top = -30
+  Width = 520
+  BorderStyle = bsDialog
+  Caption = 'Syntax Highlighting Schemes'
+  ClientHeight = 460
+  ClientWidth = 520
+  Font.Name = 'Segoe UI'
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblHint: TLabel
+    Left = 16
+    Height = 45
+    Top = 12
+    Width = 488
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    Caption = 'Schemes use VS Code-style tokenColors JSON. Import a theme fragment or use the built-in Generic C-like scheme.'
+    WordWrap = True
+  end
+  object lstSchemes: TListBox
+    Left = 16
+    Height = 316
+    Top = 64
+    Width = 488
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ItemHeight = 0
+    TabOrder = 0
+    TopIndex = -1
+    OnClick = lstSchemesClick
+  end
+  object pnlActions: TPanel
+    Left = 16
+    Height = 36
+    Top = 388
+    Width = 488
+    Anchors = [akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    ClientHeight = 36
+    ClientWidth = 488
+    TabOrder = 1
+    object btnAdd: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 0
+      Height = 28
+      Top = 4
+      Width = 100
+      Caption = '+ Import'
+      ButtonRole = tbrPrimary
+      OnClick = btnAddClick
+      TabOrder = 0
+    end
+    object btnRemove: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 108
+      Height = 28
+      Top = 4
+      Width = 100
+      Caption = 'Remove'
+      ButtonRole = tbrDestructive
+      OnClick = btnRemoveClick
+      Enabled = False
+      TabOrder = 1
+    end
+    object btnSetActive: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 216
+      Height = 28
+      Top = 4
+      Width = 120
+      Caption = 'Set Active'
+      ButtonRole = tbrPrimary
+      OnClick = btnSetActiveClick
+      Enabled = False
+      TabOrder = 2
+    end
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 44
+    Top = 416
+    Width = 520
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 44
+    ClientWidth = 520
+    TabOrder = 2
+    object btnClose: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 424
+      Height = 28
+      Top = 8
+      Width = 80
+      Caption = 'Close'
+      OnClick = btnCloseClick
+      Anchors = [akTop, akRight]
+      TabOrder = 0
+    end
+  end
+end

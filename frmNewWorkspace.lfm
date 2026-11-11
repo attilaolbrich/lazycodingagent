@@ -1,0 +1,89 @@
+object NewWorkspaceForm: TNewWorkspaceForm
+  Left = 2557
+  Height = 208
+  Top = -30
+  Width = 520
+  BorderStyle = bsDialog
+  Caption = 'New Workspace'
+  ClientHeight = 208
+  ClientWidth = 520
+  Font.Name = 'Segoe UI'
+  Position = poScreenCenter
+  LCLVersion = '4.8.0.0'
+  OnShow = FormShow
+  object lblDisplayName: TLabel
+    Left = 16
+    Height = 22
+    Top = 16
+    Width = 96
+    Caption = 'Display name'
+  end
+  object edtDisplayName: TEdit
+    Left = 16
+    Height = 30
+    Top = 36
+    Width = 488
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 0
+  end
+  object lblFolder: TLabel
+    Left = 16
+    Height = 22
+    Top = 68
+    Width = 95
+    Caption = 'Project folder'
+  end
+  object edtFolder: TEdit
+    Left = 16
+    Height = 30
+    Top = 88
+    Width = 376
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 1
+  end
+  object btnBrowse: TLcaPaintButton
+    Cursor = crHandPoint
+    Left = 400
+    Height = 28
+    Top = 86
+    Width = 104
+    Caption = 'Browse...'
+    OnClick = btnBrowseClick
+    Anchors = [akTop, akRight]
+    TabOrder = 2
+  end
+  object pnlBottom: TPanel
+    Left = 0
+    Height = 44
+    Top = 164
+    Width = 520
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 44
+    ClientWidth = 520
+    TabOrder = 3
+    object btnOK: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 336
+      Height = 28
+      Top = 8
+      Width = 80
+      Caption = 'OK'
+      ButtonRole = tbrPrimary
+      OnClick = btnOKClick
+      Anchors = [akTop, akRight]
+      TabOrder = 0
+    end
+    object btnCancel: TLcaPaintButton
+      Cursor = crHandPoint
+      Left = 424
+      Height = 28
+      Top = 8
+      Width = 80
+      Caption = 'Cancel'
+      OnClick = btnCancelClick
+      Anchors = [akTop, akRight]
+      TabOrder = 1
+    end
+  end
+end

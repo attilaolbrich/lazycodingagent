@@ -1,0 +1,30 @@
+---
+description: Lazarus LCL layout — avoid ChangeBounds loops (Align vs SetBounds, combos, PageControl)
+alwaysApply: true
+---
+
+# LCL layout and ChangeBounds stability
+
+## What triggers loops
+
+`TControl.ChangeBounds loop detected` means two layout owners fought in one cascade: manual `SetBounds`, LCL `Align`/`ReAlign`, and/or native control preferred size (especially `TComboBox`).
+
+## Do not
+
+- Mix **`Align` (especially `alClient`)** with manual **`SetBounds`** on the **same** control.
+- Set **`TComboBox.Height`** in theme helpers (`StyleComboBox`) while another place (`.lfm` or resize handlers) sets a different height.
+- Force combo **`Height`** or **`ItemHeight`** to theme constants in `StyleComboBox`; the **`.lfm`** values are the geometry source.
+- Run layout from `Resize` without a **re-entrancy guard** when the handler calls `SetBounds` on children.
+
+## Do
+
+- **One geometry owner** per control: either LCL alignment **or** explicit manual layout, not both.
+- **PageControl tab sheets:** put content on each `TTabSheet` with `Align = alClient` (or structured `alTop` / `alBottom` footers as in chat). Do not reparent sheet bodies at runtime.
+- **Combos:** set **`Height`** and **`ItemHeight`** in the **Form Designer** (`.lfm`). **`StyleComboBox`** applies owner-draw colors/font and keeps those streamed metrics; use `EffectiveThemedComboBoxHeight` only as a read-only estimate when laying out around a combo.
+- Verify: resize main window, toggle utility/terminal visibility, theme toggle — no ChangeBounds dialog.
+
+## References
+
+- [`mainunit.lfm`](mainunit.lfm) — docked panels, center and utility `TPageControl`, chat footer align
+- [`uChatPanel.pas`](uChatPanel.pas) — binds streamed composer controls; no manual footer `SetBounds`
+- [`uTheme.pas`](uTheme.pas) — combo metrics, `StyleComboBox`, `TButton` helpers (Windows colors; native buttons on Linux and macOS)
