@@ -1497,6 +1497,13 @@ object LazyCodingAgentForm: TLazyCodingAgentForm
         OnClick = MnuAgentStopClick
       end
     end
+    object mnuPlugins: TMenuItem
+      Caption = '&Plugins'
+      object mnuPluginsMcpConnections: TMenuItem
+        Caption = '&MCP Connections...'
+        OnClick = MnuPluginsMcpConnectionsClick
+      end
+    end
     object mnuSettings: TMenuItem
       Caption = '&Settings'
       object mnuSettingsOptions: TMenuItem

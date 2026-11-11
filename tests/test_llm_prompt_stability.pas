@@ -26,6 +26,7 @@ begin
     '- read_file: Read' + LineEnding;
   Input.RulesText := '';
   Input.WebSearchLine := '';
+  Input.McpPluginLine := '';
   FullA := BuildSystemPromptParts(Input, PartsA);
   FullB := BuildSystemPromptParts(Input, PartsB);
   AssertSame(FullA, FullB, 'Identical inputs must produce identical system prompt');
@@ -67,6 +68,7 @@ begin
   Input.AllowModifyOutsideWorkspace := False;
   Input.ToolsGuidance := 'tools';
   Input.WebSearchLine := '';
+  Input.McpPluginLine := '';
   Input.RulesText := '';
   SegA := BuildSystemPromptSegments(Input, Settings);
   Input.RulesText := 'rule one';
@@ -92,6 +94,7 @@ begin
   Input.ToolsGuidance := '';
   Input.RulesText := '';
   Input.WebSearchLine := '';
+  Input.McpPluginLine := '';
   Full := BuildSystemPromptParts(Input, Parts);
   if Pos('Available tools (JSON arguments):', Full) > 0 then
     raise Exception.Create('Empty ToolsGuidance must omit tool list header');

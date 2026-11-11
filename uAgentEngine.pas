@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, SyncObjs, uAppTypes, uAgentTypes, uLlmClient, uAgentTools, uAgentRules,
   uAgentExecutionLog, uAgentToolErrorLog, uChatContextManager, uLlmPromptCacheTypes,
-  uLlmPromptSegments, uLlmToolCalling, uLlmCacheCapabilities;
+  uLlmPromptSegments, uLlmToolCalling, uLlmCacheCapabilities, uMcpManager;
 
 type
   { Event types for UI notification }
@@ -82,6 +82,9 @@ type
     FLastPromptSegments: TPromptSegmentArray;
     FCachedRulesFingerprint: string;
     FCachedRulesText: string;
+    FMcp: TMcpSessionManager;
+
+    function McpCancelCheck: Boolean;
 
     function TryCompactConversationHistory(out ANote: string): Boolean;
     function SendCompletionWithTruncationRetry(const AMessages: array of TChatMessage;
@@ -158,6 +161,9 @@ type
     property ExecutionLog: TAgentExecutionLog read FExecutionLog write FExecutionLog;
     property ToolErrorLog: TAgentToolErrorLog read FToolErrorLog write FToolErrorLog;
     procedure ReportRunException(const E: Exception);
+
+    procedure RegisterMcpMentionsFromPrompt(const APrompt: string);
+    function McpActiveAliasesText: string;
   end;
 
 implementation
@@ -200,6 +206,7 @@ begin
   FContext.SetCancelFlag(@FCancelRequested);
   FContext.SetCancelDeadline(0);
   FTools := TAgentToolRegistry.Create(FContext);
+  FMcp := TMcpSessionManager.Create(@McpCancelCheck);
   SetLength(FMessages, 0);
 end;
 
@@ -216,6 +223,7 @@ begin
   FOnToolErrorAdded := nil;
   if Assigned(Application) then
     Application.ProcessMessages;
+  FMcp.Free;
   FTools.Free;
   FContext.Free;
   FClient.Free;
@@ -408,11 +416,32 @@ begin
     FOnMessageAdded(Self, AMsg);
 end;
 
+function TAgentEngine.McpCancelCheck: Boolean;
+begin
+  Result := GetCancelRequested;
+end;
+
+procedure TAgentEngine.RegisterMcpMentionsFromPrompt(const APrompt: string);
+begin
+  if Assigned(FMcp) then
+    FMcp.RegisterMentionsFromPrompt(APrompt);
+end;
+
+function TAgentEngine.McpActiveAliasesText: string;
+begin
+  if Assigned(FMcp) then
+    Result := FMcp.ActiveAliasesText
+  else
+    Result := '';
+end;
+
 function TAgentEngine.BuildSystemPrompt(AMode: TWorkspaceMode): string;
 var
   Input: TSystemPromptBuildInput;
   Parts: array of string;
   Fp: string;
+  McpGuidance: string;
+  NativeTools: Boolean;
 begin
   Fp := TAgentRules.RulesContentFingerprint(FContext.WorkspaceRoot);
   if Fp = FCachedRulesFingerprint then
@@ -425,10 +454,16 @@ begin
   Input.Mode := AMode;
   Input.WorkspaceRoot := FContext.WorkspaceRoot;
   Input.AllowModifyOutsideWorkspace := FContext.AllowModifyOutsideWorkspace;
-  if ToolDefinitionsSentInApiPayload then
-    Input.ToolsGuidance := ''
-  else
+  NativeTools := ToolDefinitionsSentInApiPayload;
+  McpGuidance := FMcp.BuildGuidance(not NativeTools);
+  if NativeTools then
+    Input.ToolsGuidance := McpGuidance
+  else begin
     Input.ToolsGuidance := FTools.ToolGuidance(AMode, True);
+    if McpGuidance <> '' then
+      Input.ToolsGuidance := Input.ToolsGuidance + LineEnding + McpGuidance;
+  end;
+  Input.McpPluginLine := McpPluginInstructionLine(McpGuidance <> '');
   Input.WebSearchLine := WebSearchInstructionLineForPrompt;
   Result := BuildSystemPromptParts(Input, Parts);
   FLastPromptSegments := BuildSystemPromptSegments(Input, FPromptCacheSettings);
@@ -467,7 +502,10 @@ begin
     Result.Summary := 'busy';
     Exit;
   end;
-  Result := FTools.ExecuteTool(AName, AArgumentsJson, AMode);
+  if FMcp.IsMcpTool(AName) then
+    Result := FMcp.ExecuteTool(AName, AArgumentsJson)
+  else
+    Result := FTools.ExecuteTool(AName, AArgumentsJson, AMode);
 end;
 
 procedure TAgentEngine.ClearConversation;
@@ -481,6 +519,8 @@ begin
     FDataLock.Leave;
   end;
   FContext.ClearSession;
+  if Assigned(FMcp) then
+    FMcp.ClearSession;
   if Assigned(FExecutionLog) then
     FExecutionLog.Clear;
   SetState(asIdle);
@@ -501,6 +541,8 @@ begin
     FDataLock.Leave;
   end;
   FContext.ClearSession;
+  if Assigned(FMcp) then
+    FMcp.RescanMessages(AMessages);
   SetState(asIdle);
 end;
 
@@ -770,6 +812,7 @@ begin
     if Trim(AModel) <> '' then
       FClient.Model := AModel;
 
+    FMcp.RegisterMentionsFromPrompt(AUserPrompt);
     ApplySystemPrompt(AMode);
 
     UserMsg := StringToChatRole('user');
@@ -782,6 +825,7 @@ begin
     StepCount := 0;
     FContext.Mode := AMode;
     ToolDefs := FTools.GetToolDefinitions(AMode);
+    FMcp.AppendToolDefs(ToolDefs);
 
     if Assigned(FExecutionLog) then begin
       FDataLock.Enter;
@@ -900,6 +944,9 @@ begin
             IntToStr(Length(Resp.ToolCalls[I].ArgumentsJson)) + ' bytes). ' +
             TruncationHintForFinishReason(Resp.FinishReason) +
             'Retry with smaller writes or increase max tokens in Settings.'))
+        else if FMcp.IsMcpTool(Resp.ToolCalls[I].Name) then
+          ToolResult := FMcp.ExecuteTool(Resp.ToolCalls[I].Name,
+            Resp.ToolCalls[I].ArgumentsJson)
         else
           ToolResult := FTools.ExecuteTool(Resp.ToolCalls[I].Name,
             Resp.ToolCalls[I].ArgumentsJson, AMode);

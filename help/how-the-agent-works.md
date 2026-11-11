@@ -35,6 +35,7 @@ You → system + history → (optional summarize) → LLM → (optional tools) �
 - **Workspace mode** (Ask / Plan / Agent) — controls which tools are advertised.
 - **Workspace root** — all file paths are resolved relative to this folder.
 - **Tool guidance** — when **Native tool calling** is on and the provider API accepts a native `tools` array, tool **schemas are not repeated** in the system message (only in the HTTP `tools` field). If native tool calling is off, the system prompt includes full parameter JSON for each allowed tool.
+- **MCP plugins** — when you `@mention` a configured plugin in chat, that session also loads tools from the MCP server (`mcp_*` prefixed names). Schemas join the system prompt and/or native `tools` payload for that run like built-in tools.
 - **Project rules** — combined text from `<workspace>/.rules/*.md`.
 
 The model only sees tools that are **allowed in the current mode**.

@@ -103,6 +103,26 @@ type
     procedure SaveIdleTimeoutMs(AValue: Integer);
   end;
 
+  TMcpConnectionRow = record
+    Id: string;
+    Name: string;
+    Enabled: Boolean;
+    Transport: string;
+    Url: string;
+    BearerToken: string;
+    Command: string;
+    ArgsJson: string;
+    WorkingDir: string;
+    TimeoutMs: Integer;
+  end;
+  TMcpConnectionRows = array of TMcpConnectionRow;
+
+  IMcpRepository = interface
+    ['{A1B2C3D4-E5F6-4012-A1B2-C3D4E5F60718}']
+    procedure LoadConnections(out ARows: TMcpConnectionRows);
+    procedure SaveConnections(const ARows: TMcpConnectionRows);
+  end;
+
 implementation
 
 end.

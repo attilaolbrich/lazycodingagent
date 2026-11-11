@@ -42,6 +42,12 @@
     "keywords": ["sqlite", "global.db", "config", "settings", "migration", "backup", "encrypted", "api key", "legacy", "ini"]
   },
   {
+    "id": "mcp-plugins",
+    "title": "MCP plugins",
+    "file": "mcp-plugins.md",
+    "keywords": ["mcp", "plugins", "connector", "stdio", "bearer", "http", "alias", "mention", "@", "tools/list", "model context protocol"]
+  },
+  {
     "id": "web-search",
     "title": "Web Search",
     "file": "web-search.md",

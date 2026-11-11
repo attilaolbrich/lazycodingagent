@@ -44,6 +44,10 @@ fpc -Mobjfpc -Scghi -Fu"$ROOT" -Fu"$ROOT/packages/LcaDesignSystem/src" \
   "${FPC_EXTRA[@]}" -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_llm_openai_tools.pas
 fpc -Mobjfpc -Scghi -Fu"$ROOT" -Fu"$ROOT/packages/LcaDesignSystem/src" \
   "${FPC_EXTRA[@]}" -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_llm_tool_schemas.pas
+fpc -Mobjfpc -Scghi -Fu"$ROOT" "${FPC_EXTRA[@]}" \
+  -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_mcp_mentions.pas
+fpc -Mobjfpc -Scghi -Fu"$ROOT" -Fu"$ROOT/packages/LcaDesignSystem/src" "${FPC_EXTRA[@]}" \
+  -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_mcp_json_tools.pas
 if command -v lazbuild >/dev/null 2>&1; then
   "$ROOT/scripts/install-lazarus-sqlite.sh"
   lazbuild "$ROOT/tests/test_app_database.lpi"
@@ -60,5 +64,7 @@ fi
 "$TEST_OUTPUT/test_llm_prompt_stability"
 "$TEST_OUTPUT/test_llm_openai_tools"
 "$TEST_OUTPUT/test_llm_tool_schemas"
+"$TEST_OUTPUT/test_mcp_mentions"
+"$TEST_OUTPUT/test_mcp_json_tools"
 python3 tests/test_local_tools.py "$TEST_OUTPUT/tool_driver"
 echo "All LazyCodingAgent tool tests passed."

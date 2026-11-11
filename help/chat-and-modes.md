@@ -49,6 +49,10 @@ The **model** combo lists models you configured in Settings. The choice is kept 
 
 On the same **Agent** tab, **Native tool calling**, **Text tool-call compatibility**, and **Streaming completions** control how tool schemas and responses are exchanged with OpenAI-compatible APIs (see **How the agent works**).
 
+## MCP plugins (@alias)
+
+Configure MCP servers under **Plugins → MCP Connections...**. In chat, include `@name` in your message (matching the connection name) to activate that plugin for the **session** until you **Clear Conversation**. See **MCP plugins** in the User Guide for HTTP vs stdio setup.
+
 ## Debugging mode vs live trace
 
 In **Settings → Agent Behavior**, enable **Debugging mode** to show **full tool results** in the chat transcript. When disabled, successful tool JSON stays out of chat; **errors** still appear.

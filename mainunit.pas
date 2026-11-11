@@ -161,6 +161,8 @@ type
     mnuAgent: TMenuItem;
     mnuAgentClearHistory: TMenuItem;
     mnuAgentStop: TMenuItem;
+    mnuPlugins: TMenuItem;
+    mnuPluginsMcpConnections: TMenuItem;
     mnuSettings: TMenuItem;
     mnuSettingsOptions: TMenuItem;
     mnuWindow: TMenuItem;
@@ -199,6 +201,7 @@ type
     procedure MnuViewSyntaxSchemesClick(Sender: TObject);
     procedure MnuAgentClearHistoryClick(Sender: TObject);
     procedure MnuAgentStopClick(Sender: TObject);
+    procedure MnuPluginsMcpConnectionsClick(Sender: TObject);
     procedure MnuSettingsOptionsClick(Sender: TObject);
     procedure MnuWorkspaceProjectRulesClick(Sender: TObject);
     procedure MnuWorkspaceMultiAgentClick(Sender: TObject);
@@ -414,7 +417,7 @@ uses
   frmSettings, frmNewWorkspace, frmWorkspaceRules, frmSyntaxSchemes, uBrowserManager,
   frmMultiAgentWorkspace, frmExecutionPlansConfig, frmKnowledgeBaseConfig, frmTheBrainConfig,
   uBrowserPermissions, frmBrowserConfirm,
-  frmOpenMarkdown, frmHelp, frmPlanBuildConfirm, uGlobalConfigBootstrap, uAppDatabase,
+  frmOpenMarkdown, frmHelp, frmPlanBuildConfirm, frmMcpPlugins, uGlobalConfigBootstrap, uAppDatabase,
   uLlmToolCalling
   {$IFDEF WINDOWS}, Windows{$ENDIF};
 
@@ -2315,6 +2318,11 @@ begin
   Eng := ActiveAgent;
   if Assigned(Eng) then
     Eng.RequestCancel;
+end;
+
+procedure TLazyCodingAgentForm.MnuPluginsMcpConnectionsClick(Sender: TObject);
+begin
+  TMcpPluginsForm.Execute(Self, FState.Theme);
 end;
 
 procedure TLazyCodingAgentForm.MnuSettingsOptionsClick(Sender: TObject);

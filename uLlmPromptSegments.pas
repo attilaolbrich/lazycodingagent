@@ -17,6 +17,7 @@ type
     ToolsGuidance: string;
     RulesText: string;
     WebSearchLine: string;
+    McpPluginLine: string;
   end;
 
 function PromptSegmentContentHash(const AContent: string): string;
@@ -38,6 +39,7 @@ function BuildSystemPromptSegments(const AInput: TSystemPromptBuildInput;
   const ASettings: TPromptCacheSettings): TPromptSegmentArray;
 
 function WebSearchInstructionLineForPrompt: string;
+function McpPluginInstructionLine(const AMcpToolsPresent: Boolean): string;
 
 implementation
 
@@ -81,6 +83,7 @@ begin
         'Active Mode: Plan' + LineEnding +
         'Current Project Directory: ' + WorkingDir + LineEnding + LineEnding +
         AInput.ToolsGuidance +
+        AInput.McpPluginLine +
         'Instructions:' + LineEnding +
         '- This agent is working on a project. For project tasks, always inspect the actual files and use list_directory/glob/search_code/read_file before making claims.' + LineEnding +
         '- Use inspection tools, cached diagnostics, and task tracking.' + LineEnding +
@@ -100,6 +103,7 @@ begin
         'Current Project Directory: ' + WorkingDir + LineEnding +
         'Project-specific language, build, and style conventions may appear in Project Rules (.rules/*.md) below.' + LineEnding + LineEnding +
         AInput.ToolsGuidance + LineEnding +
+        AInput.McpPluginLine +
         'Instructions:' + LineEnding +
         '- For project tasks, always inspect the actual files with list_directory/glob/search_code/read_file before making claims or changes; do not guess at file contents.' + LineEnding +
         AInput.WebSearchLine +
@@ -126,6 +130,7 @@ begin
         'Active Mode: Ask' + LineEnding +
         'Current Project Directory: ' + WorkingDir + LineEnding + LineEnding +
         AInput.ToolsGuidance + LineEnding +
+        AInput.McpPluginLine +
         'Instructions:' + LineEnding +
         '- For project questions, always inspect the actual files with list_directory/glob/search_code/read_file before answering.' + LineEnding +
         AInput.WebSearchLine +
@@ -255,6 +260,16 @@ begin
   end;
 end;
 
+function McpPluginInstructionLine(const AMcpToolsPresent: Boolean): string;
+begin
+  if not AMcpToolsPresent then
+    Result := ''
+  else
+    Result := LineEnding +
+      'MCP plugins: The user activated one or more MCP connectors with @alias in this chat session. ' +
+      'Use only the listed mcp_* prefixed tools from those plugins.' + LineEnding;
+end;
+
 function WebSearchInstructionLineForPrompt: string;
 begin
   if WebSearchIsToolAvailable then
@@ -271,6 +286,7 @@ begin
   Result.AllowModifyOutsideWorkspace := AAllowOutside;
   Result.ToolsGuidance := AToolsGuidance;
   Result.WebSearchLine := WebSearchInstructionLineForPrompt;
+  Result.McpPluginLine := '';
   Result.RulesText := TAgentRules.ReadAll(AWorkspaceRoot);
 end;
 

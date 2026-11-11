@@ -35,6 +35,7 @@ type
     class function GlobalLlmSettings: ILlmSettingsRepository;
     class function GlobalPanelLayout: IPanelLayoutRepository;
     class function GlobalWebSearch: IWebSearchRepository;
+    class function GlobalMcp: IMcpRepository;
     class function GlobalBrowserRead: IBrowserReadRepository;
     class function IsGlobalOpen: Boolean;
     class function SchemaVersion(AScope: TAppDatabaseScope; const AWsId: string = ''): Integer;
@@ -45,7 +46,7 @@ implementation
 uses
   uSqlite3Embed, uSqliteAppSettingsRepository, uSqliteWorkspaceRegistryRepository,
   uSqliteLlmSettingsRepository, uSqlitePanelLayoutRepository, uSqliteWebSearchRepository,
-  uSqliteBrowserReadRepository;
+  uSqliteMcpRepository, uSqliteBrowserReadRepository;
 
 const
   ENV_DATA_ROOT = 'LAZYCODINGAGENT_DATA_ROOT';
@@ -235,6 +236,26 @@ begin
       ');', nil, nil, @Err), Db, 'migration v2 web_search_connections');
     if Err <> nil then sqlite3_free(Err);
     RecordMigration(Db, 2);
+    Ver := 2;
+  end;
+  if Ver < 3 then
+  begin
+    Err := nil;
+    SqliteCheck(sqlite3_exec(Db,
+      'CREATE TABLE mcp_connections (' +
+      '  id TEXT PRIMARY KEY,' +
+      '  name TEXT NOT NULL UNIQUE,' +
+      '  enabled INTEGER NOT NULL DEFAULT 1,' +
+      '  transport TEXT NOT NULL DEFAULT ''http'',' +
+      '  url TEXT NOT NULL DEFAULT '''',' +
+      '  bearer_token TEXT NOT NULL DEFAULT '''',' +
+      '  command TEXT NOT NULL DEFAULT '''',' +
+      '  args_json TEXT NOT NULL DEFAULT ''[]'',' +
+      '  cwd TEXT NOT NULL DEFAULT '''',' +
+      '  timeout_ms INTEGER NOT NULL DEFAULT 30000' +
+      ');', nil, nil, @Err), Db, 'migration v3 mcp_connections');
+    if Err <> nil then sqlite3_free(Err);
+    RecordMigration(Db, 3);
   end;
 end;
 
@@ -398,6 +419,13 @@ begin
   if GGlobalDb = nil then
     raise Exception.Create('Global database is not open');
   Result := TSqliteWebSearchRepository.Create(PSqlite3(GGlobalDb));
+end;
+
+class function TAppDatabase.GlobalMcp: IMcpRepository;
+begin
+  if GGlobalDb = nil then
+    raise Exception.Create('Global database is not open');
+  Result := TSqliteMcpRepository.Create(PSqlite3(GGlobalDb));
 end;
 
 class function TAppDatabase.GlobalBrowserRead: IBrowserReadRepository;

@@ -17,6 +17,7 @@ In **`global.db`:**
 
 - LLM provider settings and saved model lists
 - Web search connection settings and API keys
+- MCP plugin connections (`mcp_connections`) and Bearer tokens
 - Browser automation preferences
 - Workspace registry (list of workspaces and active workspace id)
 - Panel layout and general application preferences
