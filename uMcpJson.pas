@@ -352,7 +352,7 @@ end;
 function ExtractMcpCallResultText(const AJson: string): string;
 var
   Data: TJSONData;
-  Root, ResultObj, ContentArr: TJSONObject;
+  Root, ResultObj: TJSONObject;
   I: Integer;
   Item: TJSONData;
   TextVal: string;

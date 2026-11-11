@@ -47,6 +47,7 @@ uses
   {$ENDIF}
   ;
 
+{$IFNDEF MSWINDOWS}
 type
   TMcpSslBridge = class
   public
@@ -57,7 +58,6 @@ type
 var
   GMcpSslBridge: TMcpSslBridge;
 
-{$IFNDEF MSWINDOWS}
 procedure TMcpSslBridge.OnGetSocket(Sender: TObject; const UseSSL: Boolean; out AHandler: TSocketHandler);
 begin
   if not UseSSL then begin
@@ -299,10 +299,12 @@ begin
   end;
 end;
 
+{$IFNDEF MSWINDOWS}
 initialization
   GMcpSslBridge := TMcpSslBridge.Create;
 
 finalization
   FreeAndNil(GMcpSslBridge);
+{$ENDIF}
 
 end.
