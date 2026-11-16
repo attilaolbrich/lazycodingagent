@@ -38,9 +38,14 @@ type
     FTag: PtrUInt;
     FReadLock: TCriticalSection;
     FPending: TStringList;
+    FIgnored: TStringList;
     function WaitForResponse(AId: Integer; TimeoutMs: Integer;
       CancelCheck: TBrowserReadCancelCheck; out ResultObj: TJSONObject): Boolean;
     procedure ClearPending;
+    procedure RememberIgnored(AId: Integer);
+    function ConsumeIgnored(AId: Integer): Boolean;
+    function WriteCommand(const Method: string; const Params: TJSONObject;
+      out Id: Integer): Boolean;
     procedure StorePendingResponse(AId: Integer; const Root: TJSONObject);
     function TakePendingResponse(AId: Integer; out ResultObj: TJSONObject): Boolean;
     function BuildResultFromRoot(const Root: TJSONObject; out ResultObj: TJSONObject): Boolean;
@@ -60,6 +65,7 @@ type
     function SendCommand(const Method: string; const Params: TJSONObject;
       TimeoutMs: Integer; CancelCheck: TBrowserReadCancelCheck;
       out ResultObj: TJSONObject): Boolean;
+    function SendCommandForget(const Method: string; const Params: TJSONObject): Boolean;
     procedure PumpEvents(TimeoutMs: Integer; CancelCheck: TBrowserReadCancelCheck);
     procedure DrainEvents(MaxMessages: Integer; CancelCheck: TBrowserReadCancelCheck);
     procedure Disconnect;
@@ -116,11 +122,15 @@ begin
   FPending := TStringList.Create;
   FPending.Sorted := True;
   FPending.Duplicates := dupError;
+  FIgnored := TStringList.Create;
+  FIgnored.Sorted := True;
+  FIgnored.Duplicates := dupIgnore;
 end;
 
 destructor TCdpConnection.Destroy;
 begin
   Disconnect;
+  FreeAndNil(FIgnored);
   FreeAndNil(FPending);
   FreeAndNil(FReadLock);
   inherited Destroy;
@@ -142,10 +152,71 @@ begin
         Obj.Free;
     end;
     FPending.Clear;
+    if FIgnored <> nil then
+      FIgnored.Clear;
   finally
     if Assigned(FReadLock) then
       FReadLock.Leave;
   end;
+end;
+
+procedure TCdpConnection.RememberIgnored(AId: Integer);
+var
+  Key: string;
+begin
+  Key := IntToStr(AId);
+  FReadLock.Enter;
+  try
+    if (FIgnored <> nil) and (FIgnored.IndexOf(Key) < 0) then
+      FIgnored.Add(Key);
+  finally
+    FReadLock.Leave;
+  end;
+end;
+
+function TCdpConnection.ConsumeIgnored(AId: Integer): Boolean;
+var
+  Key: string;
+  Idx: Integer;
+begin
+  Result := False;
+  Key := IntToStr(AId);
+  FReadLock.Enter;
+  try
+    if FIgnored = nil then Exit;
+    Idx := FIgnored.IndexOf(Key);
+    if Idx < 0 then Exit;
+    FIgnored.Delete(Idx);
+    Result := True;
+  finally
+    FReadLock.Leave;
+  end;
+end;
+
+function TCdpConnection.WriteCommand(const Method: string; const Params: TJSONObject;
+  out Id: Integer): Boolean;
+var
+  Cmd: TJSONObject;
+  Payload: string;
+begin
+  Id := 0;
+  Result := False;
+  if not ConnectLoopAlive then Exit;
+  Id := FNextId;
+  Inc(FNextId);
+  Cmd := TJSONObject.Create;
+  try
+    Cmd.Add('id', Id);
+    Cmd.Add('method', Method);
+    if FSessionId <> '' then
+      Cmd.Add('sessionId', FSessionId);
+    if Assigned(Params) then
+      Cmd.Add('params', Params.Clone);
+    Payload := Cmd.AsJSON;
+  finally
+    Cmd.Free;
+  end;
+  Result := FTransport.SendText(Payload);
 end;
 
 procedure TCdpConnection.Disconnect;
@@ -267,6 +338,8 @@ begin
   begin
     IdVal := TJSONNumber(Root.Find('id'));
     MsgId := IdVal.AsInteger;
+    if ConsumeIgnored(MsgId) then
+      Exit;
     if (AWaitId >= 0) and (MsgId = AWaitId) then
     begin
       Matched := BuildResultFromRoot(Root, ResultObj);
@@ -345,18 +418,22 @@ var
 begin
   ResultObj := nil;
   Result := False;
-  if TakePendingResponse(AId, ResultObj) then
-    Exit(True);
   Start := GetTickCount64;
-  while GetTickCount64 - Start < QWord(TimeoutMs) do
+  { A nested CDP command, or the background pump (DrainEvents with no wait id),
+    can store this response in FPending while ReadAndRouteOne is dispatching an
+    event. Checking pending only once drops that response until timeout, which
+    leaves Chromium paused on the tab we are waiting for. }
+  while True do
   begin
+    if TakePendingResponse(AId, ResultObj) then
+      Exit(True);
+    if GetTickCount64 - Start >= QWord(TimeoutMs) then
+      Exit(False);
     if Assigned(CancelCheck) and CancelCheck() then Exit;
     if not ConnectLoopAlive then Exit;
-    if ReadAndRouteOne(200, CancelCheck, AId, Matched, ResultObj) then
-    begin
-      if Matched then
-        Exit(True);
-    end;
+    Matched := False;
+    if ReadAndRouteOne(200, CancelCheck, AId, Matched, ResultObj) and Matched then
+      Exit(True);
   end;
 end;
 
@@ -364,28 +441,21 @@ function TCdpConnection.SendCommand(const Method: string; const Params: TJSONObj
   TimeoutMs: Integer; CancelCheck: TBrowserReadCancelCheck;
   out ResultObj: TJSONObject): Boolean;
 var
-  Cmd: TJSONObject;
   Id: Integer;
-  Payload: string;
 begin
   ResultObj := nil;
-  if not ConnectLoopAlive then Exit(False);
-  Id := FNextId;
-  Inc(FNextId);
-  Cmd := TJSONObject.Create;
-  try
-    Cmd.Add('id', Id);
-    Cmd.Add('method', Method);
-    if FSessionId <> '' then
-      Cmd.Add('sessionId', FSessionId);
-    if Assigned(Params) then
-      Cmd.Add('params', Params.Clone);
-    Payload := Cmd.AsJSON;
-  finally
-    Cmd.Free;
-  end;
-  if not FTransport.SendText(Payload) then Exit(False);
+  if not WriteCommand(Method, Params, Id) then Exit(False);
   Result := WaitForResponse(Id, TimeoutMs, CancelCheck, ResultObj);
+end;
+
+function TCdpConnection.SendCommandForget(const Method: string;
+  const Params: TJSONObject): Boolean;
+var
+  Id: Integer;
+begin
+  if not WriteCommand(Method, Params, Id) then Exit(False);
+  RememberIgnored(Id);
+  Result := True;
 end;
 
 end.

@@ -4,6 +4,8 @@ Author: Attila Olbrich
 Date: 8 October 2026  
 Status: Product roadmap and architecture discussion; input for a later implementation plan.
 
+**Active execution queue:** [vision-implementation/README.md](../vision-implementation/README.md). Do one unchecked item there, then stop. This document stays the design intent.
+
 ## 1. Purpose and vision
 
 Extend the Lazarus AI Coding Agent into a transparent software engineering workspace that can plan, execute, review and deliver features using configurable agents, persistent execution plans, workspace knowledge and optional adaptive memory.

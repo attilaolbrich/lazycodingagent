@@ -47,30 +47,28 @@ end;
 
 function TBrowserNetworkGuard.FailRequest(const RequestId, ErrorReason: string): Boolean;
 var
-  Params, ResultObj: TJSONObject;
+  Params: TJSONObject;
 begin
   Params := TJSONObject.Create;
   try
     Params.Add('requestId', RequestId);
     Params.Add('errorReason', ErrorReason);
-    Result := FConnection.SendCommand('Fetch.failRequest', Params, 10000, nil, ResultObj);
+    Result := FConnection.SendCommandForget('Fetch.failRequest', Params);
   finally
     Params.Free;
-    if Assigned(ResultObj) then ResultObj.Free;
   end;
 end;
 
 function TBrowserNetworkGuard.ContinueRequest(const RequestId: string): Boolean;
 var
-  Params, ResultObj: TJSONObject;
+  Params: TJSONObject;
 begin
   Params := TJSONObject.Create;
   try
     Params.Add('requestId', RequestId);
-    Result := FConnection.SendCommand('Fetch.continueRequest', Params, 10000, nil, ResultObj);
+    Result := FConnection.SendCommandForget('Fetch.continueRequest', Params);
   finally
     Params.Free;
-    if Assigned(ResultObj) then ResultObj.Free;
   end;
 end;
 

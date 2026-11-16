@@ -12,7 +12,7 @@ Lazy Coding Agent drives Chromium (Chrome, Chromium, or Edge) through the Chrome
 ## Workflow example
 
 1. Start your dev server with `shell` (Agent mode).
-2. `browser_navigate` to `http://127.0.0.1:3000/` (with localhost allowed).
+2. `browser_navigate` to `http://127.0.0.1:3000/` (with localhost allowed). The default wait is `domcontentloaded`. Pass `wait_strategy: load` only when the full load event matters; that is slower.
 3. `browser_inspect` to find selectors or `ref` values.
 4. `browser_fill` / `browser_click` / `browser_wait`.
 5. `browser_console` and `browser_network` for failures.

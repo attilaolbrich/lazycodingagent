@@ -194,11 +194,13 @@ begin
   GMaxConcurrent := Config.MaxConcurrent;
   if GMaxConcurrent < 1 then
     GMaxConcurrent := 1;
+  { An open session holds the slot until browser_close. Waiting out MaxTimeoutMs
+    (up to 120s) only delays the error that tells the model to close or reuse it. }
   WaitMs := Config.MaxTimeoutMs;
-  if WaitMs < 1000 then
-    WaitMs := 60000;
-  if WaitMs > 120000 then
-    WaitMs := 120000;
+  if WaitMs < 1 then
+    WaitMs := 1;
+  if WaitMs > 1000 then
+    WaitMs := 1000;
   Start := GetTickCount64;
   while GetTickCount64 - Start < QWord(WaitMs) do
   begin

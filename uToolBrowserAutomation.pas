@@ -233,7 +233,8 @@ begin
   Result.Params[1].Description := 'Existing browser session id; omit to create a new session.';
   Result.Params[2].Name := 'wait_strategy';
   Result.Params[2].ParamType := 'string';
-  Result.Params[2].Description := 'domcontentloaded, load (default), or selector.';
+  Result.Params[2].Description :=
+    'domcontentloaded (default), load, or selector. load waits for the full load event and is slower.';
   Result.Params[3].Name := 'wait_selector';
   Result.Params[3].ParamType := 'string';
   Result.Params[3].Description := 'CSS selector when wait_strategy is selector.';
@@ -272,7 +273,7 @@ begin
   if (Sid <> '') and Visible then
     Exit(JsonErr('INVALID_ARGUMENT',
       'visible applies only when creating a session (omit session_id)'));
-  if not ParseBrowserReadWaitStrategy(Args.Get('wait_strategy', 'load'), Strategy) then
+  if not ParseBrowserReadWaitStrategy(Args.Get('wait_strategy', 'domcontentloaded'), Strategy) then
     Exit(JsonErr('INVALID_ARGUMENT', 'invalid wait_strategy'));
   WaitSel := Args.Get('wait_selector', '');
   TimeoutMs := Args.Get('timeout_ms', BROWSER_AUTOMATION_DEFAULT_TIMEOUT_MS);

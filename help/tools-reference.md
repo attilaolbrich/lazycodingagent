@@ -155,7 +155,7 @@ Persistent **browser sessions** for interactive testing (Chromium via CDP). Typi
 
 | Tool | Purpose |
 |------|---------|
-| `browser_navigate` | Open URL (`http`, `https`, or workspace `file:///`); creates `session_id` when omitted. Optional `visible: true` opens a headed window (new sessions only) |
+| `browser_navigate` | Open URL (`http`, `https`, or workspace `file:///`); creates `session_id` when omitted. Optional `visible: true` opens a headed window (new sessions only). `wait_strategy` defaults to `domcontentloaded`; `load` waits for the full load event and is slower |
 | `browser_inspect` | Page summary, links, forms, element refs |
 | `browser_click` | Pointer click (CDP input events) |
 | `browser_fill` | Type into inputs (passwords not logged) |
@@ -173,7 +173,7 @@ Persistent **browser sessions** for interactive testing (Chromium via CDP). Typi
 
 **Requirements:** Chromium-compatible browser (Settings → Agent → Chromium executable).
 
-If `browser_navigate` creates a session (no `session_id`) but navigation fails, the app closes that session automatically so it does not block the next browser tool. When navigation succeeds, call `browser_close` when you are done, or reuse the returned `session_id`.
+If `browser_navigate` creates a session (no `session_id`) but navigation fails, the app closes that session automatically so it does not block the next browser tool. When navigation succeeds, call `browser_close` when you are done, or reuse the returned `session_id`. Omit `wait_strategy` to wait only until DOM content is loaded. Pass `load` when you need the full load event; that waits longer, and if the event never fires the tool continues shortly after DOM content loaded.
 
 **Visible browser:** On a **new** session, set `visible` to `true` on `browser_navigate` to open a normal Chromium window. The tool returns when navigation finishes (chat continues) while the window stays open. Automation starts **paused** (`automation_paused: true`) so the user can log in without competing CDP clicks or fills. Call `browser_resume_automation` before `browser_click`, `browser_fill`, `browser_select`, `browser_set_viewport`, or navigating again with the same `session_id`. Use `browser_pause_automation` to hand control back. Read-only tools work while paused. **`browser_close`** ends the session and frees the browser concurrency slot (important when **Max concurrent** is 1). Visible sessions are not auto-closed by idle timeout. Default headless sessions are unchanged.
 

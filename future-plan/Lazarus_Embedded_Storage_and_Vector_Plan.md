@@ -4,6 +4,8 @@ Author: Attila Olbrich
 Date: 9 October 2026 (implementation status updated October 2026)  
 Status: Architecture and migration plan. **M0 + global SQLite config are implemented**; chat/syntax SQLite wiring and RAG remain. **No** INI/JSON importers or legacy read-through (see [`sqlite/README.md`](sqlite/README.md)).
 
+**Active execution queue:** [vision-implementation/README.md](../vision-implementation/README.md). Implement only the **NEXT** item there. This document and [`sqlite/README.md`](sqlite/README.md) are the design reference.
+
 ## Implementation status (landed)
 
 | Item | Location | Notes |

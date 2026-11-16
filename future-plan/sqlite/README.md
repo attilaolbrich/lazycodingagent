@@ -1,18 +1,14 @@
 # SQLite migration — implementation queue
 
+**Active execution queue:** [vision-implementation/README.md](../../vision-implementation/README.md). Implement only the **NEXT** item there. This file is design reference (schema notes and cancelled importers). Do not start work from the table below.
+
 Architecture and schema reference: [Lazarus_Embedded_Storage_and_Vector_Plan.md](../Lazarus_Embedded_Storage_and_Vector_Plan.md).
 
 Coding rules: [`.cursor/rules/persistence-and-data-access.mdc`](../../.cursor/rules/persistence-and-data-access.mdc).
 
 ## Rule
 
-**Always implement only the next unchecked item in the table below.**
-
-Do not skip ahead or combine multiple items in one PR unless a document explicitly marks work as optional follow-up.
-
-When an item ships, check it off here and move the **NEXT** marker to the following row.
-
-**Current next item:** [m1-workspace-schema-v2.md](m1-workspace-schema-v2.md)
+The active rule is in [vision-implementation/README.md](../../vision-implementation/README.md): one **NEXT** item, then stop. Do not use the table below as a second queue. Leave these checkboxes as historical design status.
 
 ---
 
@@ -22,7 +18,7 @@ When an item ships, check it off here and move the **NEXT** marker to the follow
 | --- | --- | --- | --- |
 | [x] | m0 | [m0-foundation.md](m0-foundation.md) | Static SQLite M0 (shipped) |
 | [x] | m1a | [m1-global-schema-v2.md](m1-global-schema-v2.md) | Global DB migration v2 tables (gap: `syntax_schemes`, FK on `saved_models`) |
-| [ ] | m1b | [m1-workspace-schema-v2.md](m1-workspace-schema-v2.md) | **NEXT** — Workspace DB chat schema + split migrations |
+| [ ] | m1b | [m1-workspace-schema-v2.md](m1-workspace-schema-v2.md) | Workspace DB chat schema + split migrations (see vision queue 001) |
 | [x] | m1c | [m1-read-through-workspace-state.md](m1-read-through-workspace-state.md) | `uWorkspaceState` → SQLite repos |
 | [x] | m1d | [m1-read-through-workspace-registry.md](m1-read-through-workspace-registry.md) | `uWorkspaceRegistry` → SQLite |
 | [ ] | m1e | [m1-read-through-chat-sessions.md](m1-read-through-chat-sessions.md) | `uChatSessionStore` → SQLite |
