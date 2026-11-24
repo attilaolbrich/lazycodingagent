@@ -62,6 +62,11 @@ type
     FAllowModifyOutsideCheck: TCheckBox;
     FAllowModifyOutsideLabel: TLabel;
     FUpdatingAllowModifyOutside: Boolean;
+    FAllowBrowserInteractiveCheck: TCheckBox;
+    FAllowBrowserInteractiveLabel: TLabel;
+    FAllowBrowserLocalhostCheck: TCheckBox;
+    FAllowBrowserLocalhostLabel: TLabel;
+    FUpdatingBrowserPermissions: Boolean;
 
     FSessionId: string;
     FPendingImagePaths: TStringList;
@@ -101,9 +106,15 @@ type
     procedure Bind(AHeading, ASubHeading, ASessionLabel: TLabel; AHistoryHost: TPanel;
       APrompt: TMemo; AWorkspaceTag: TLabel; AModeCombo, AModelCombo: TLcaPaintComboBox;
       ASendBtn, AStopBtn, AAttachBtn: TLcaPaintButton; AAttachmentStrip: TPanel;
-      AAllowModifyOutside: TCheckBox; AAllowModifyOutsideLabel: TLabel = nil);
+      AAllowModifyOutside: TCheckBox; AAllowModifyOutsideLabel: TLabel = nil;
+      AAllowBrowserInteractive: TCheckBox = nil; AAllowBrowserInteractiveLabel: TLabel = nil;
+      AAllowBrowserLocalhost: TCheckBox = nil; AAllowBrowserLocalhostLabel: TLabel = nil);
     procedure SetAllowModifyOutsideChecked(AValue: Boolean);
     function GetAllowModifyOutsideChecked: Boolean;
+    procedure SetAllowBrowserInteractiveChecked(AValue: Boolean);
+    function GetAllowBrowserInteractiveChecked: Boolean;
+    procedure SetAllowBrowserLocalhostChecked(AValue: Boolean);
+    function GetAllowBrowserLocalhostChecked: Boolean;
     procedure SetSessionId(const ASessionId: string);
     procedure ApplyTheme(ATheme: TThemeKind);
     procedure ApplyPlatformChrome(ATheme: TThemeKind);
@@ -137,7 +148,7 @@ type
 implementation
 
 uses
-  uChatImageStore, uAgentExecutionLog;
+  uChatImageStore, uAgentExecutionLog, LcaAgentDebugLog;
 
 const
   MaxToolBodyInChat = 1200;
@@ -232,7 +243,9 @@ end;
 procedure TChatPanel.Bind(AHeading, ASubHeading, ASessionLabel: TLabel; AHistoryHost: TPanel;
   APrompt: TMemo; AWorkspaceTag: TLabel; AModeCombo, AModelCombo: TLcaPaintComboBox;
   ASendBtn, AStopBtn, AAttachBtn: TLcaPaintButton; AAttachmentStrip: TPanel;
-  AAllowModifyOutside: TCheckBox; AAllowModifyOutsideLabel: TLabel);
+  AAllowModifyOutside: TCheckBox; AAllowModifyOutsideLabel: TLabel;
+  AAllowBrowserInteractive: TCheckBox; AAllowBrowserInteractiveLabel: TLabel;
+  AAllowBrowserLocalhost: TCheckBox; AAllowBrowserLocalhostLabel: TLabel);
 var
   M: TWorkspaceMode;
 begin
@@ -250,6 +263,10 @@ begin
   FAttachmentStrip := AAttachmentStrip;
   FAllowModifyOutsideCheck := AAllowModifyOutside;
   FAllowModifyOutsideLabel := AAllowModifyOutsideLabel;
+  FAllowBrowserInteractiveCheck := AAllowBrowserInteractive;
+  FAllowBrowserInteractiveLabel := AAllowBrowserInteractiveLabel;
+  FAllowBrowserLocalhostCheck := AAllowBrowserLocalhost;
+  FAllowBrowserLocalhostLabel := AAllowBrowserLocalhostLabel;
 
   EnsureHistoryView;
 
@@ -491,22 +508,38 @@ end;
 procedure TChatPanel.ApplyHistoryViewNow(AScrollToEnd: Boolean);
 var
   Delta: string;
+  Branch: string;
 begin
   EnsureHistoryView;
-  if not Assigned(FHistoryView) then Exit;
+  if not Assigned(FHistoryView) then begin
+    // #region agent log
+    LcaAgentDbgLog('uChatPanel.pas:ApplyHistoryViewNow', 'no_history_view', 'H4', '{}');
+    // #endregion
+    Exit;
+  end;
   if (FHistoryViewSyncedLen <= 0) or (FHistoryViewSyncedLen > Length(FHistoryText)) then begin
+    Branch := 'full_set';
     FHistoryView.SetMarkdown(FHistoryText, AScrollToEnd);
     FHistoryViewSyncedLen := Length(FHistoryText);
     if FEphemeralThinkingActive then
       FHistoryView.SetEphemeralThinkingVisible(True);
   end else if FHistoryViewSyncedLen < Length(FHistoryText) then begin
+    Branch := 'append';
     Delta := Copy(FHistoryText, FHistoryViewSyncedLen + 1, MaxInt);
     FHistoryView.AppendMarkdownTail(Delta, AScrollToEnd);
     FHistoryViewSyncedLen := Length(FHistoryText);
     if FEphemeralThinkingActive then
       FHistoryView.SetEphemeralThinkingVisible(True);
-  end else if AScrollToEnd then
-    FHistoryView.ScrollToEndIfAutoScroll;
+  end else begin
+    Branch := 'noop';
+    if AScrollToEnd then
+      FHistoryView.ScrollToEndIfAutoScroll;
+  end;
+  // #region agent log
+  LcaAgentDbgLog('uChatPanel.pas:ApplyHistoryViewNow', 'apply_history', 'H4',
+    Format('{"branch":"%s","histLen":%d,"syncedLen":%d,"viewName":"%s","scrollToEnd":%d}',
+      [Branch, Length(FHistoryText), FHistoryViewSyncedLen, FHistoryView.Name, Ord(AScrollToEnd)]));
+  // #endregion
   FHistoryRefreshDueTick := GetTickCount64 + CHAT_HISTORY_REFRESH_MIN_MS;
 end;
 
@@ -677,6 +710,14 @@ begin
     ConfigureThemedCheckBox(FAllowModifyOutsideCheck, ATheme);
   if Assigned(FAllowModifyOutsideLabel) then
     FAllowModifyOutsideLabel.Font.Color := P.Text;
+  if Assigned(FAllowBrowserInteractiveCheck) then
+    ConfigureThemedCheckBox(FAllowBrowserInteractiveCheck, ATheme);
+  if Assigned(FAllowBrowserInteractiveLabel) then
+    FAllowBrowserInteractiveLabel.Font.Color := P.Text;
+  if Assigned(FAllowBrowserLocalhostCheck) then
+    ConfigureThemedCheckBox(FAllowBrowserLocalhostCheck, ATheme);
+  if Assigned(FAllowBrowserLocalhostLabel) then
+    FAllowBrowserLocalhostLabel.Font.Color := P.Text;
   RefreshAttachmentStrip;
   RefreshHistoryView;
 end;
@@ -907,6 +948,42 @@ begin
   Result := False;
 end;
 
+procedure TChatPanel.SetAllowBrowserInteractiveChecked(AValue: Boolean);
+begin
+  FUpdatingBrowserPermissions := True;
+  try
+    if Assigned(FAllowBrowserInteractiveCheck) then
+      FAllowBrowserInteractiveCheck.Checked := AValue;
+  finally
+    FUpdatingBrowserPermissions := False;
+  end;
+end;
+
+function TChatPanel.GetAllowBrowserInteractiveChecked: Boolean;
+begin
+  if Assigned(FAllowBrowserInteractiveCheck) then
+    Exit(FAllowBrowserInteractiveCheck.Checked);
+  Result := False;
+end;
+
+procedure TChatPanel.SetAllowBrowserLocalhostChecked(AValue: Boolean);
+begin
+  FUpdatingBrowserPermissions := True;
+  try
+    if Assigned(FAllowBrowserLocalhostCheck) then
+      FAllowBrowserLocalhostCheck.Checked := AValue;
+  finally
+    FUpdatingBrowserPermissions := False;
+  end;
+end;
+
+function TChatPanel.GetAllowBrowserLocalhostChecked: Boolean;
+begin
+  if Assigned(FAllowBrowserLocalhostCheck) then
+    Exit(FAllowBrowserLocalhostCheck.Checked);
+  Result := False;
+end;
+
 procedure TChatPanel.SetComposerEnabled(AEnabled: Boolean);
 begin
   if Assigned(FPromptMemo) then
@@ -923,6 +1000,14 @@ begin
     FAllowModifyOutsideCheck.Enabled := AEnabled and not FIsRunning;
   if Assigned(FAllowModifyOutsideLabel) then
     FAllowModifyOutsideLabel.Enabled := AEnabled and not FIsRunning;
+  if Assigned(FAllowBrowserInteractiveCheck) then
+    FAllowBrowserInteractiveCheck.Enabled := AEnabled and not FIsRunning;
+  if Assigned(FAllowBrowserInteractiveLabel) then
+    FAllowBrowserInteractiveLabel.Enabled := AEnabled and not FIsRunning;
+  if Assigned(FAllowBrowserLocalhostCheck) then
+    FAllowBrowserLocalhostCheck.Enabled := AEnabled and not FIsRunning;
+  if Assigned(FAllowBrowserLocalhostLabel) then
+    FAllowBrowserLocalhostLabel.Enabled := AEnabled and not FIsRunning;
 end;
 
 procedure TChatPanel.ReloadFromMessages(const AMessages: TChatMessageArray; ADebuggingMode: Boolean);
@@ -946,6 +1031,11 @@ begin
   end;
   if FHistoryText = '' then
     InitWelcomeText;
+  // #region agent log
+  LcaAgentDbgLog('uChatPanel.pas:ReloadFromMessages', 'session_reload', 'H4',
+    Format('{"msgCount":%d,"histLen":%d,"syncedBeforeApply":%d}',
+      [Length(AMessages), Length(FHistoryText), FHistoryViewSyncedLen]));
+  // #endregion
   ApplyHistoryViewNow(False);
 end;
 

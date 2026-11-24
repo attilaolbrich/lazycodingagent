@@ -113,6 +113,13 @@ type
     btnChatStop: TLcaPaintButton;
     pnlWrapChatSend: TPanel;
     btnChatSend: TLcaPaintButton;
+    pnlChatFooterRowBrowser: TPanel;
+    pnlChatFooterRowBrowserInteractive: TPanel;
+    chkChatAllowBrowserInteractive: TCheckBox;
+    lblChatAllowBrowserInteractive: TLabel;
+    pnlChatFooterRowBrowserLocalhost: TPanel;
+    chkChatAllowBrowserLocalhost: TCheckBox;
+    lblChatAllowBrowserLocalhost: TLabel;
     pnlChatFooterRowCheck: TPanel;
     chkChatAllowModifyOutside: TCheckBox;
     lblChatAllowModifyOutside: TLabel;
@@ -213,6 +220,10 @@ type
     procedure NavRailBtnClick(Sender: TObject);
     procedure ChkChatAllowModifyOutsideClick(Sender: TObject);
     procedure LblChatAllowModifyOutsideClick(Sender: TObject);
+    procedure ChkChatAllowBrowserInteractiveClick(Sender: TObject);
+    procedure LblChatAllowBrowserInteractiveClick(Sender: TObject);
+    procedure ChkChatAllowBrowserLocalhostClick(Sender: TObject);
+    procedure LblChatAllowBrowserLocalhostClick(Sender: TObject);
   private
     FChatSessionTabIds: TStringList;
     FPlanDocPaths: TStringList;
@@ -253,6 +264,7 @@ type
     FExecDetailRefreshQueued: Boolean;
     FExecDetailPendingIndex: Integer;
     FExecDetailPendingSource: TExecDetailSource;
+    FExecDetailPendingSessionId: string;
 
     FRegistry: TWorkspaceRegistry;
     FCurrentSessionId: string;
@@ -272,9 +284,17 @@ type
     function AgentStateIsRunning(AState: TAgentState): Boolean;
     procedure ApplySessionComposerState;
     procedure ApplyAllowModifyOutsideToSession(const ASessionId: string; AValue: Boolean);
+    procedure ApplyAllowBrowserInteractiveToSession(const ASessionId: string; AValue: Boolean);
+    procedure ApplyAllowBrowserLocalhostToSession(const ASessionId: string; AValue: Boolean);
     procedure LoadAllowModifyOutsideForSession(const ASessionId: string);
     procedure HandleBrowserSensitiveConfirm(const AMessage: string; var AApproved,
       AAllowForSession: Boolean);
+    procedure HandleBrowserInteractiveConfirm(const AMessage: string; var AApproved,
+      AAllowForSession: Boolean);
+    procedure HandleBrowserLocalhostConfirm(const AMessage: string; var AApproved,
+      AAllowForSession: Boolean);
+    procedure PersistBrowserInteractive(const AChatSessionId: string; AValue: Boolean);
+    procedure PersistBrowserLocalhost(const AChatSessionId: string; AValue: Boolean);
     procedure ActivateWorkspace(const AWorkspaceId: string);
     procedure DeactivateWorkspace;
     procedure RemoveWorkspaceFromList(const AWorkspaceId: string);
@@ -373,6 +393,8 @@ type
       AArgsJson: string; const AResult: TToolExecutionResult);
     procedure HubExecutionLogAdded(Sender: TObject; const ASessionId: string; AEntryIndex: Integer);
     procedure HubToolErrorAdded(Sender: TObject; const ASessionId: string; AEntryIndex: Integer);
+    procedure HubHistoryRepaired(Sender: TObject; const ASessionId: string);
+    procedure RefreshChatTranscriptFromEngine(const ASessionId: string);
     procedure NavLogEntrySelected(Sender: TObject; AIndex: Integer);
     procedure NavToolErrorEntrySelected(Sender: TObject; AIndex: Integer);
     procedure NavClearExecutionLog(Sender: TObject);
@@ -382,7 +404,8 @@ type
     procedure DetachNavSessionLogs;
     procedure ShowExecutionLogDetail(AIndex: Integer);
     procedure ShowToolErrorDetail(AIndex: Integer);
-    procedure ScheduleExecDetailLiveRefresh(AIndex: Integer; ASource: TExecDetailSource);
+    procedure ScheduleExecDetailLiveRefresh(const ASessionId: string; AIndex: Integer;
+      ASource: TExecDetailSource);
     procedure DeferredExecDetailRefresh(Data: PtrInt);
     procedure ApplyExecDetailAtIndex(AIndex: Integer; ASource: TExecDetailSource;
       AOpenTabIfNeeded: Boolean);
@@ -464,6 +487,7 @@ begin
   Hub.OnToolResult := @HubToolResult;
   Hub.OnExecutionLogAdded := @HubExecutionLogAdded;
   Hub.OnToolErrorAdded := @HubToolErrorAdded;
+  Hub.OnHistoryRepaired := @HubHistoryRepaired;
   SyncHubClientSettings(Hub);
   FActiveHub := Hub;
 end;
@@ -494,14 +518,22 @@ end;
 
 procedure TLazyCodingAgentForm.HandleBrowserSensitiveConfirm(const AMessage: string;
   var AApproved, AAllowForSession: Boolean);
+var
+  Sid: string;
+  Hub: TChatSessionHub;
+  Eng: TAgentEngine;
 begin
   AApproved := ConfirmSensitiveBrowserAction(AMessage, FState.Theme, AAllowForSession);
-  if AApproved and AAllowForSession and (FCurrentSessionId <> '') and Assigned(ActiveStore) then
-  begin
-    ActiveStore.SetAllowBrowserSensitive(FCurrentSessionId, True);
-    if Assigned(FActiveHub) then
-      FActiveHub.GetOrCreateEngine(FCurrentSessionId).Context.AllowBrowserSensitive := True;
-  end;
+  Sid := BrowserConfirmRequestSessionId;
+  if Sid = '' then
+    Sid := FCurrentSessionId;
+  if not AApproved or (Sid = '') then Exit;
+  Hub := FSessionHubs.FindHubBySessionId(Sid);
+  if not Assigned(Hub) then Exit;
+  Eng := Hub.GetOrCreateEngine(Sid);
+  Eng.Context.AllowBrowserSensitive := True;
+  if AAllowForSession then
+    Hub.Store.SetAllowBrowserSensitive(Sid, True);
 end;
 
 procedure TLazyCodingAgentForm.LoadAllowModifyOutsideForSession(const ASessionId: string);
@@ -515,8 +547,16 @@ begin
   HasInfo := Assigned(ActiveStore) and ActiveStore.FindSessionInfo(ASessionId, Info);
   if HasInfo then
     Value := Info.AllowModifyOutside;
-  if Assigned(FChatPanel) then
+  if Assigned(FChatPanel) then begin
     FChatPanel.SetAllowModifyOutsideChecked(Value);
+    if HasInfo then begin
+      FChatPanel.SetAllowBrowserInteractiveChecked(Info.AllowBrowserInteractive);
+      FChatPanel.SetAllowBrowserLocalhostChecked(Info.AllowBrowserLocalhost);
+    end else begin
+      FChatPanel.SetAllowBrowserInteractiveChecked(False);
+      FChatPanel.SetAllowBrowserLocalhostChecked(False);
+    end;
+  end;
   if Assigned(FActiveHub) then begin
     Eng := FActiveHub.GetOrCreateEngine(ASessionId);
     Eng.Context.AllowModifyOutsideWorkspace := Value;
@@ -534,6 +574,98 @@ begin
   end;
 end;
 
+procedure TLazyCodingAgentForm.ApplyAllowBrowserInteractiveToSession(const ASessionId: string;
+  AValue: Boolean);
+var
+  Eng: TAgentEngine;
+  Hub: TChatSessionHub;
+begin
+  if ASessionId = '' then Exit;
+  Hub := FSessionHubs.FindHubBySessionId(ASessionId);
+  if not Assigned(Hub) then Exit;
+  Hub.Store.SetAllowBrowserInteractive(ASessionId, AValue);
+  Eng := Hub.EngineFor(ASessionId);
+  if Assigned(Eng) then
+    Eng.Context.AllowBrowserInteractive := AValue;
+end;
+
+procedure TLazyCodingAgentForm.ApplyAllowBrowserLocalhostToSession(const ASessionId: string;
+  AValue: Boolean);
+var
+  Eng: TAgentEngine;
+  Hub: TChatSessionHub;
+begin
+  if ASessionId = '' then Exit;
+  Hub := FSessionHubs.FindHubBySessionId(ASessionId);
+  if not Assigned(Hub) then Exit;
+  Hub.Store.SetAllowBrowserLocalhost(ASessionId, AValue);
+  Eng := Hub.EngineFor(ASessionId);
+  if Assigned(Eng) then
+    Eng.Context.AllowBrowserLocalhost := AValue;
+end;
+
+procedure TLazyCodingAgentForm.HandleBrowserInteractiveConfirm(const AMessage: string;
+  var AApproved, AAllowForSession: Boolean);
+var
+  Sid: string;
+  Hub: TChatSessionHub;
+begin
+  Sid := BrowserConfirmRequestSessionId;
+  if Sid = '' then
+    Sid := FCurrentSessionId;
+  AApproved := ConfirmBrowserPermissionAction('Interactive browser', AMessage, FState.Theme,
+    AAllowForSession);
+  if not AApproved then Exit;
+  if Sid <> '' then begin
+    Hub := FSessionHubs.FindHubBySessionId(Sid);
+    if Assigned(Hub) then
+      Hub.GetOrCreateEngine(Sid).Context.AllowBrowserInteractive := True;
+  end;
+  if AAllowForSession and (Sid <> '') then
+    ApplyAllowBrowserInteractiveToSession(Sid, True);
+  if SameText(Sid, FCurrentSessionId) and Assigned(FChatPanel) then
+    FChatPanel.SetAllowBrowserInteractiveChecked(True);
+end;
+
+procedure TLazyCodingAgentForm.HandleBrowserLocalhostConfirm(const AMessage: string;
+  var AApproved, AAllowForSession: Boolean);
+var
+  Sid: string;
+  Hub: TChatSessionHub;
+begin
+  Sid := BrowserConfirmRequestSessionId;
+  if Sid = '' then
+    Sid := FCurrentSessionId;
+  AApproved := ConfirmBrowserPermissionAction('Browser localhost', AMessage, FState.Theme,
+    AAllowForSession);
+  if not AApproved then Exit;
+  if Sid <> '' then begin
+    Hub := FSessionHubs.FindHubBySessionId(Sid);
+    if Assigned(Hub) then
+      Hub.GetOrCreateEngine(Sid).Context.AllowBrowserLocalhost := True;
+  end;
+  if AAllowForSession and (Sid <> '') then
+    ApplyAllowBrowserLocalhostToSession(Sid, True);
+  if SameText(Sid, FCurrentSessionId) and Assigned(FChatPanel) then
+    FChatPanel.SetAllowBrowserLocalhostChecked(True);
+end;
+
+procedure TLazyCodingAgentForm.PersistBrowserInteractive(const AChatSessionId: string;
+  AValue: Boolean);
+begin
+  ApplyAllowBrowserInteractiveToSession(AChatSessionId, AValue);
+  if SameText(AChatSessionId, FCurrentSessionId) and Assigned(FChatPanel) then
+    FChatPanel.SetAllowBrowserInteractiveChecked(AValue);
+end;
+
+procedure TLazyCodingAgentForm.PersistBrowserLocalhost(const AChatSessionId: string;
+  AValue: Boolean);
+begin
+  ApplyAllowBrowserLocalhostToSession(AChatSessionId, AValue);
+  if SameText(AChatSessionId, FCurrentSessionId) and Assigned(FChatPanel) then
+    FChatPanel.SetAllowBrowserLocalhostChecked(AValue);
+end;
+
 procedure TLazyCodingAgentForm.ChkChatAllowModifyOutsideClick(Sender: TObject);
 begin
   if not Assigned(FChatPanel) then Exit;
@@ -546,6 +678,37 @@ procedure TLazyCodingAgentForm.LblChatAllowModifyOutsideClick(Sender: TObject);
 begin
   if not Assigned(chkChatAllowModifyOutside) or not chkChatAllowModifyOutside.Enabled then Exit;
   chkChatAllowModifyOutside.Checked := not chkChatAllowModifyOutside.Checked;
+end;
+
+procedure TLazyCodingAgentForm.ChkChatAllowBrowserInteractiveClick(Sender: TObject);
+begin
+  if not Assigned(FChatPanel) then Exit;
+  if FCurrentSessionId = '' then Exit;
+  if Assigned(FActiveHub) and FActiveHub.IsSessionRunning(FCurrentSessionId) then Exit;
+  ApplyAllowBrowserInteractiveToSession(FCurrentSessionId,
+    FChatPanel.GetAllowBrowserInteractiveChecked);
+end;
+
+procedure TLazyCodingAgentForm.LblChatAllowBrowserInteractiveClick(Sender: TObject);
+begin
+  if not Assigned(chkChatAllowBrowserInteractive) or
+    not chkChatAllowBrowserInteractive.Enabled then Exit;
+  chkChatAllowBrowserInteractive.Checked := not chkChatAllowBrowserInteractive.Checked;
+end;
+
+procedure TLazyCodingAgentForm.ChkChatAllowBrowserLocalhostClick(Sender: TObject);
+begin
+  if not Assigned(FChatPanel) then Exit;
+  if FCurrentSessionId = '' then Exit;
+  if Assigned(FActiveHub) and FActiveHub.IsSessionRunning(FCurrentSessionId) then Exit;
+  ApplyAllowBrowserLocalhostToSession(FCurrentSessionId,
+    FChatPanel.GetAllowBrowserLocalhostChecked);
+end;
+
+procedure TLazyCodingAgentForm.LblChatAllowBrowserLocalhostClick(Sender: TObject);
+begin
+  if not Assigned(chkChatAllowBrowserLocalhost) or not chkChatAllowBrowserLocalhost.Enabled then Exit;
+  chkChatAllowBrowserLocalhost.Checked := not chkChatAllowBrowserLocalhost.Checked;
 end;
 
 procedure TLazyCodingAgentForm.ApplySessionComposerState;
@@ -592,6 +755,10 @@ begin
   BindToolErrorLogToNav(ASessionId);
   RefreshNavTaskList;
   ClearExecDetailView;
+  FExecutionLogFollowLive := False;
+  FExecDetailRefreshQueued := False;
+  FExecDetailPendingIndex := -1;
+  FExecDetailPendingSessionId := '';
 end;
 
 procedure TLazyCodingAgentForm.BindExecutionLogToNav(const ASessionId: string);
@@ -695,6 +862,10 @@ begin
   FSessionHubs := TChatSessionHubManager.Create;
   FActiveHub := nil;
   SetBrowserSensitiveConfirmHandler(@HandleBrowserSensitiveConfirm);
+  SetBrowserInteractiveConfirmHandler(@HandleBrowserInteractiveConfirm);
+  SetBrowserLocalhostConfirmHandler(@HandleBrowserLocalhostConfirm);
+  SetBrowserInteractivePersistHandler(@PersistBrowserInteractive);
+  SetBrowserLocalhostPersistHandler(@PersistBrowserLocalhost);
   FNavWorkCaptions := TStringList.Create;
   FNavWorkIds := TStringList.Create;
   FNavSessionCaptions := TStringList.Create;
@@ -714,6 +885,7 @@ begin
   FExecDetailRefreshQueued := False;
   FExecDetailPendingIndex := -1;
   FExecDetailPendingSource := edsNone;
+  FExecDetailPendingSessionId := '';
 
   FSyntaxSchemes := TSyntaxSchemeRegistry.Create;
   FSyntaxSchemes.Load;
@@ -1190,7 +1362,9 @@ begin
   FChatPanel := TChatPanel.Create(Self);
   FChatPanel.Bind(lblChatHeading, lblChatSub, lblChatSession, pnlChatHistoryHost, memChatPrompt,
     lblChatWorkspaceTag, cboChatMode, cboChatModel, btnChatSend, btnChatStop,
-    btnChatAttachImage, pnlChatAttachmentStrip, chkChatAllowModifyOutside, lblChatAllowModifyOutside);
+    btnChatAttachImage, pnlChatAttachmentStrip, chkChatAllowModifyOutside, lblChatAllowModifyOutside,
+    chkChatAllowBrowserInteractive, lblChatAllowBrowserInteractive,
+    chkChatAllowBrowserLocalhost, lblChatAllowBrowserLocalhost);
   FChatPanel.OnPrompt := @ChatPrompt;
   FChatPanel.OnModeChange := @ChatModeChange;
   FChatPanel.OnModelChange := @ChatModelChange;
@@ -1625,6 +1799,8 @@ begin
   end else
     FExecutionLogFollowLive := False;
   Eng.Context.AllowModifyOutsideWorkspace := FChatPanel.GetAllowModifyOutsideChecked;
+  Eng.Context.AllowBrowserInteractive := FChatPanel.GetAllowBrowserInteractiveChecked;
+  Eng.Context.AllowBrowserLocalhost := FChatPanel.GetAllowBrowserLocalhostChecked;
   FChatPanel.SetRunning(True);
   if not Eng.StartRunAsync(APrompt, AAttachments, AMode, AModel) then
     FChatPanel.SetRunning(False);
@@ -1684,6 +1860,28 @@ begin
     else
       FChatPanel.AppendMessage(AMsg);
   end;
+end;
+
+procedure TLazyCodingAgentForm.RefreshChatTranscriptFromEngine(const ASessionId: string);
+var
+  E: TAgentEngine;
+  I: Integer;
+  Msgs: TChatMessageArray;
+begin
+  if (ASessionId = '') or not Assigned(FActiveHub) or not Assigned(FChatPanel) then Exit;
+  E := FActiveHub.EngineFor(ASessionId);
+  if not Assigned(E) then Exit;
+  SetLength(Msgs, E.GetMessageCount);
+  for I := 0 to E.GetMessageCount - 1 do
+    Msgs[I] := E.GetMessage(I);
+  FChatPanel.ReloadFromMessages(Msgs, FState.DebuggingMode);
+  FChatPanel.SetRunning(E.IsRunActive);
+end;
+
+procedure TLazyCodingAgentForm.HubHistoryRepaired(Sender: TObject; const ASessionId: string);
+begin
+  if SameText(ASessionId, FCurrentSessionId) then
+    RefreshChatTranscriptFromEngine(ASessionId);
 end;
 
 procedure TLazyCodingAgentForm.HubToolCall(Sender: TObject; const ASessionId: string;
@@ -1770,13 +1968,14 @@ begin
   if Assigned(FNavContent) then
     FNavContent.AppendExecutionLogEntry(AEntryIndex, FExecutionLogFollowLive);
   if FExecutionLogFollowLive then
-    ScheduleExecDetailLiveRefresh(AEntryIndex, edsExecLog);
+    ScheduleExecDetailLiveRefresh(ASessionId, AEntryIndex, edsExecLog);
 end;
 
-procedure TLazyCodingAgentForm.ScheduleExecDetailLiveRefresh(AIndex: Integer;
-  ASource: TExecDetailSource);
+procedure TLazyCodingAgentForm.ScheduleExecDetailLiveRefresh(const ASessionId: string;
+  AIndex: Integer; ASource: TExecDetailSource);
 begin
   if csDestroying in ComponentState then Exit;
+  FExecDetailPendingSessionId := ASessionId;
   FExecDetailPendingIndex := AIndex;
   FExecDetailPendingSource := ASource;
   if FExecDetailRefreshQueued then Exit;
@@ -1790,6 +1989,8 @@ begin
   if PtrInt(Self) <> Data then Exit;
   if csDestroying in ComponentState then Exit;
   if FExecDetailPendingIndex < 0 then Exit;
+  if (FExecDetailPendingSessionId <> '') and
+    not SameText(FExecDetailPendingSessionId, FCurrentSessionId) then Exit;
   ApplyExecDetailAtIndex(FExecDetailPendingIndex, FExecDetailPendingSource, True);
 end;
 
@@ -2574,6 +2775,8 @@ procedure TLazyCodingAgentForm.DeactivateWorkspace;
 begin
   if Assigned(FActiveHub) then
     FActiveHub.SaveAll;
+  DetachNavSessionLogs;
+  ClearExecDetailView;
   FActiveHub := nil;
   FState.ActiveWorkspaceId := '';
   FState.WorkspaceName := '';

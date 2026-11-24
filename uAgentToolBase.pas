@@ -109,8 +109,8 @@ implementation
 uses
   uAgentToolPaths;
 
-var
-  GActiveToolContext: TAgentToolContext = nil;
+threadvar
+  GActiveToolContext: TAgentToolContext;
 
 function CurrentToolContext: TAgentToolContext;
 begin
@@ -542,8 +542,11 @@ begin
 end;
 
 function ToolCancelled: Boolean;
+var
+  C: TAgentToolContext;
 begin
-  Result := Assigned(GActiveToolContext) and GActiveToolContext.IsCancelled;
+  C := CurrentToolContext;
+  Result := Assigned(C) and C.IsCancelled;
 end;
 
 function NotifyToolFileChanged(const APath: string): string;

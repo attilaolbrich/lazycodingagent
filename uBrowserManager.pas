@@ -32,6 +32,7 @@ type
     NetworkLog: TBrowserNetworkCollector;
     RefMap: TStringList;
     RefCounter: Integer;
+    FastTeardown: Boolean;
     Lock: TCriticalSection;
     destructor Destroy; override;
     procedure Touch;
@@ -57,6 +58,8 @@ function BrowserSessionFind(const SessionId: string): TBrowserManagedSession;
 function BrowserSessionClose(const SessionId: string;
   CancelCheck: TBrowserReadCancelCheck): Boolean;
 procedure BrowserSessionPurgeIdle(const Config: TBrowserReadConfig);
+function BrowserOpenSessionsJson: string;
+procedure BrowserSessionCloseForChatSession(const ChatSessionId: string);
 
 implementation
 
@@ -82,13 +85,21 @@ procedure BrowserCdpPumpSessionsOnce;
 var
   I: Integer;
   S: TBrowserManagedSession;
+  Snapshot: TList;
 begin
   if GSessionLock = nil then Exit;
-  GSessionLock.Enter;
+  Snapshot := TList.Create;
   try
-    for I := 0 to GSessions.Count - 1 do
+    GSessionLock.Enter;
+    try
+      for I := 0 to GSessions.Count - 1 do
+        Snapshot.Add(GSessions[I]);
+    finally
+      GSessionLock.Leave;
+    end;
+    for I := 0 to Snapshot.Count - 1 do
     begin
-      S := TBrowserManagedSession(GSessions[I]);
+      S := TBrowserManagedSession(Snapshot[I]);
       if not S.FetchGuardEnabled then Continue;
       if not Assigned(S.Connection) then Continue;
       S.Lock.Enter;
@@ -100,7 +111,7 @@ begin
       end;
     end;
   finally
-    GSessionLock.Leave;
+    Snapshot.Free;
   end;
 end;
 
@@ -149,27 +160,114 @@ begin
 end;
 
 destructor TBrowserManagedSession.Destroy;
+var
+  Conn: TCdpConnection;
 begin
   Lock.Enter;
   try
-    if Assigned(PageSession) then
+    FetchGuardEnabled := False;
+    Conn := Connection;
+    Connection := nil;
+    if Assigned(Conn) then
+    begin
+      Conn.OnEvent := nil;
+      Conn.Disconnect;
+    end;
+    if (not FastTeardown) and Assigned(PageSession) then
       PageSession.ClosePage(nil);
-    PageSession.Free;
-    Navigator.Free;
-    Guard.Free;
-    EventCtx.Free;
-    ConsoleLog.Free;
-    NetworkLog.Free;
-    RefMap.Free;
-    if Assigned(Connection) then
-      Connection.Free;
-    Socket.Free;
-    Browser.Free;
+    FreeAndNil(PageSession);
+    FreeAndNil(Navigator);
+    FreeAndNil(Guard);
+    FreeAndNil(EventCtx);
+    FreeAndNil(ConsoleLog);
+    FreeAndNil(NetworkLog);
+    FreeAndNil(RefMap);
   finally
     Lock.Leave;
   end;
+  FreeAndNil(Conn);
+  FreeAndNil(Socket);
+  FreeAndNil(Browser);
   Lock.Free;
   inherited Destroy;
+end;
+
+procedure FreeBrowserSessionsList(AList: TList);
+var
+  I: Integer;
+  S: TBrowserManagedSession;
+begin
+  if AList = nil then Exit;
+  for I := 0 to AList.Count - 1 do
+  begin
+    S := TBrowserManagedSession(AList[I]);
+    S.FastTeardown := True;
+    S.Free;
+  end;
+  AList.Free;
+end;
+
+function BrowserOpenSessionsJson: string;
+var
+  I: Integer;
+  S: TBrowserManagedSession;
+  Root, Item: TJSONObject;
+  Arr: TJSONArray;
+begin
+  Arr := TJSONArray.Create;
+  if GSessionLock <> nil then
+  begin
+    GSessionLock.Enter;
+    try
+      for I := 0 to GSessions.Count - 1 do
+      begin
+        S := TBrowserManagedSession(GSessions[I]);
+        Item := TJSONObject.Create;
+        Item.Add('session_id', S.Id);
+        Item.Add('visible', S.Visible);
+        Item.Add('automation_paused', S.AutomationPaused);
+        Item.Add('last_activity', FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', S.LastActivity));
+        Arr.Add(Item);
+      end;
+    finally
+      GSessionLock.Leave;
+    end;
+  end;
+  Root := TJSONObject.Create;
+  try
+    Root.Add('sessions', Arr);
+    Result := Root.AsJSON;
+  finally
+    Root.Free;
+  end;
+end;
+
+function BrowserOpenSessionIdsHint: string;
+var
+  I: Integer;
+  S: TBrowserManagedSession;
+  Parts: TStringList;
+begin
+  Result := '';
+  if (GSessionLock = nil) or (GSessions = nil) or (GSessions.Count = 0) then Exit;
+  Parts := TStringList.Create;
+  try
+    Parts.StrictDelimiter := True;
+    Parts.Delimiter := ',';
+    GSessionLock.Enter;
+    try
+      for I := 0 to GSessions.Count - 1 do
+      begin
+        S := TBrowserManagedSession(GSessions[I]);
+        Parts.Add(S.Id);
+      end;
+    finally
+      GSessionLock.Leave;
+    end;
+    Result := ' Open session_id(s): ' + Parts.DelimitedText + '.';
+  finally
+    Parts.Free;
+  end;
 end;
 
 procedure TBrowserManagedSession.Touch;
@@ -223,7 +321,8 @@ begin
   end;
   ErrMsg := Format(
     'Timed out waiting for a browser slot (max concurrent %d). ' +
-    'Close other sessions with browser_close or retry later.', [GMaxConcurrent]);
+    'Close other sessions with browser_close or retry later.', [GMaxConcurrent]) +
+    BrowserOpenSessionIdsHint;
   Result := False;
 end;
 
@@ -241,13 +340,13 @@ end;
 
 procedure BrowserSessionPurgeIdle(const Config: TBrowserReadConfig);
 var
-  I: Integer;
+  I, PurgedCount: Integer;
   S: TBrowserManagedSession;
   Cutoff: TDateTime;
-  Purged: Boolean;
+  ToFree: TList;
 begin
   if GSessionLock = nil then Exit;
-  Purged := False;
+  ToFree := TList.Create;
   Cutoff := IncMilliSecond(Now, -Config.IdleTimeoutMs);
   GSessionLock.Enter;
   try
@@ -259,29 +358,31 @@ begin
       if S.LastActivity < Cutoff then
       begin
         GSessions.Delete(I);
-        S.Free;
+        ToFree.Add(S);
         BrowserManagerRelease;
-        Purged := True;
       end;
     end;
+    PurgedCount := ToFree.Count;
   finally
     GSessionLock.Leave;
   end;
-  if Purged then
+  FreeBrowserSessionsList(ToFree);
+  if PurgedCount > 0 then
     MaybeStopBrowserCdpPump;
 end;
 
 procedure BrowserManagerShutdownAll;
 var
-  I, N: Integer;
+  N: Integer;
+  ToFree: TList;
 begin
   StopBrowserCdpPump;
   if GSessionLock = nil then Exit;
+  ToFree := TList.Create;
   GSessionLock.Enter;
   try
     N := GSessions.Count;
-    for I := GSessions.Count - 1 downto 0 do
-      TBrowserManagedSession(GSessions[I]).Free;
+    ToFree.Assign(GSessions);
     GSessions.Clear;
     if N > 0 then
     begin
@@ -301,6 +402,7 @@ begin
   finally
     GSessionLock.Leave;
   end;
+  FreeBrowserSessionsList(ToFree);
 end;
 
 function BrowserSessionFind(const SessionId: string): TBrowserManagedSession;
@@ -487,10 +589,40 @@ begin
     finally
       GSessionLock.Leave;
     end;
+    Session.FastTeardown := True;
     Session.Free;
     Session := nil;
     BrowserManagerRelease;
   end;
+end;
+
+procedure BrowserSessionCloseForChatSession(const ChatSessionId: string);
+var
+  I, ClosedCount: Integer;
+  S: TBrowserManagedSession;
+  ToFree: TList;
+begin
+  if (ChatSessionId = '') or (GSessionLock = nil) then Exit;
+  ToFree := TList.Create;
+  GSessionLock.Enter;
+  try
+    for I := GSessions.Count - 1 downto 0 do
+    begin
+      S := TBrowserManagedSession(GSessions[I]);
+      if SameText(S.ChatSessionId, ChatSessionId) then
+      begin
+        GSessions.Delete(I);
+        ToFree.Add(S);
+        BrowserManagerRelease;
+      end;
+    end;
+    ClosedCount := ToFree.Count;
+  finally
+    GSessionLock.Leave;
+  end;
+  FreeBrowserSessionsList(ToFree);
+  if ClosedCount > 0 then
+    MaybeStopBrowserCdpPump;
 end;
 
 function BrowserSessionClose(const SessionId: string;
@@ -498,22 +630,19 @@ function BrowserSessionClose(const SessionId: string;
 var
   I: Integer;
   S: TBrowserManagedSession;
-  Closed: Boolean;
 begin
   Result := False;
-  Closed := False;
-  if GSessionLock = nil then Exit;
+  S := nil;
+  if (SessionId = '') or (GSessionLock = nil) then Exit;
   GSessionLock.Enter;
   try
     for I := 0 to GSessions.Count - 1 do
     begin
-      S := TBrowserManagedSession(GSessions[I]);
-      if SameText(S.Id, SessionId) then
+      if SameText(TBrowserManagedSession(GSessions[I]).Id, SessionId) then
       begin
+        S := TBrowserManagedSession(GSessions[I]);
         GSessions.Delete(I);
-        S.Free;
         BrowserManagerRelease;
-        Closed := True;
         Result := True;
         Break;
       end;
@@ -521,8 +650,12 @@ begin
   finally
     GSessionLock.Leave;
   end;
-  if Closed then
+  if S <> nil then
+  begin
+    S.FastTeardown := True;
+    S.Free;
     MaybeStopBrowserCdpPump;
+  end;
 end;
 
 initialization

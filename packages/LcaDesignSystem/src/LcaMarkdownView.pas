@@ -127,7 +127,7 @@ type
 implementation
 
 uses
-  Math, LCLIntf, Forms, Clipbrd, LcaUiPaintProfile, LcaPaintPrimitives;
+  Math, LCLIntf, Forms, Clipbrd, LcaUiPaintProfile, LcaPaintPrimitives, LcaAgentDebugLog;
 
 type
   TSelectLayoutState = record
@@ -843,6 +843,11 @@ begin
   if PtrInt(Self) <> Data then Exit;
   if csDestroying in ComponentState then Exit;
   if FPainting or FLayoutGuard then begin
+    // #region agent log
+    LcaAgentDbgLog('LcaMarkdownView.pas:DeferredRelayout', 'deferred_busy_reschedule', 'H3',
+      Format('{"name":"%s","fpainting":%d,"layoutGuard":%d,"needsLayout":%d,"pendingRebuild":%d}',
+        [Name, Ord(FPainting), Ord(FLayoutGuard), Ord(FNeedsLayout), Ord(FPendingRebuild)]));
+    // #endregion
     ScheduleDeferredRelayout;
     Exit;
   end;
@@ -852,6 +857,11 @@ begin
     FPendingScrollToEnd := False;
     ApplyScrollPolicy(True);
   end;
+  // #region agent log
+  LcaAgentDbgLog('LcaMarkdownView.pas:DeferredRelayout', 'deferred_complete', 'H3',
+    Format('{"name":"%s","srcLen":%d,"blocks":%d,"contentH":%d}',
+      [Name, Length(FSource), FBlocks.Count, FContentHeight]));
+  // #endregion
   Invalidate;
 end;
 
@@ -1051,7 +1061,20 @@ var
   end;
 
 begin
-  if not Assigned(FBlocks) or FLayoutGuard then Exit;
+  if not Assigned(FBlocks) then begin
+    // #region agent log
+    LcaAgentDbgLog('LcaMarkdownView.pas:RelayoutDocumentFrom', 'relayout_abort_no_blocks', 'H1',
+      Format('{"name":"%s"}', [Name]));
+    // #endregion
+    Exit;
+  end;
+  if FLayoutGuard then begin
+    // #region agent log
+    LcaAgentDbgLog('LcaMarkdownView.pas:RelayoutDocumentFrom', 'relayout_abort_layout_guard', 'H1',
+      Format('{"name":"%s","srcLen":%d}', [Name, Length(FSource)]));
+    // #endregion
+    Exit;
+  end;
   if FPainting then begin
     FNeedsLayout := True;
     ScheduleDeferredRelayout;
@@ -1063,6 +1086,11 @@ begin
     AStartBlockIndex := FBlocks.Count;
   if not HandleAllocated then begin
     FNeedsLayout := True;
+    // #region agent log
+    LcaAgentDbgLog('LcaMarkdownView.pas:RelayoutDocumentFrom', 'relayout_deferred_no_handle', 'H2',
+      Format('{"name":"%s","srcLen":%d,"visible":%d}',
+        [Name, Length(FSource), Ord(Visible)]));
+    // #endregion
     Exit;
   end;
   FLayoutGuard := True;
@@ -1095,6 +1123,11 @@ begin
   UpdateStickToBottomFromScroll;
   InvalidateSelectionLayout;
   FLayoutGuard := False;
+  // #region agent log
+  LcaAgentDbgLog('LcaMarkdownView.pas:RelayoutDocumentFrom', 'relayout_done', 'H2',
+    Format('{"name":"%s","srcLen":%d,"blocks":%d,"cw":%d,"ch":%d,"contentH":%d}',
+      [Name, Length(FSource), FBlocks.Count, ClientWidth, ClientHeight, FContentHeight]));
+  // #endregion
 end;
 
 procedure TLcaMarkdownView.RelayoutEphemeralTail;
@@ -1383,6 +1416,11 @@ begin
   if ContentBusy then begin
     FNeedsLayout := True;
     ScheduleDeferredRelayout;
+  // #region agent log
+  LcaAgentDbgLog('LcaMarkdownView.pas:SetMarkdownText', 'set_markdown_deferred_busy', 'H3',
+    Format('{"name":"%s","srcLen":%d,"fpainting":%d,"layoutGuard":%d,"pendingRebuild":%d}',
+      [Name, Length(FSource), Ord(FPainting), Ord(FLayoutGuard), Ord(FPendingRebuild)]));
+  // #endregion
     LcaUiProfileRecordMarkdownRender;
     Exit;
   end;
@@ -1699,6 +1737,14 @@ begin
     end else if not FLayoutGuard then begin
       PaintDocument(Canvas, P);
       PaintScrollbar(P);
+    end else begin
+      // #region agent log
+      if Length(FSource) > 0 then
+        LcaAgentDbgLog('LcaMarkdownView.pas:Paint', 'paint_skip_document_layout_guard', 'H1',
+          Format('{"name":"%s","srcLen":%d,"blocks":%d,"needsLayout":%d,"pendingRebuild":%d,"cw":%d,"ch":%d}',
+            [Name, Length(FSource), FBlocks.Count, Ord(FNeedsLayout), Ord(FPendingRebuild),
+             ClientWidth, ClientHeight]));
+      // #endregion
     end;
   finally
     FPainting := False;

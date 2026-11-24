@@ -14,9 +14,9 @@ uses
   LcaThemedPageTabBar, LcaThemedButton, LcaThemedComboBox, LcaThemedControl, 
   LcaNavRailButton, LcaSurfacePanel, LcaPaintSurface, LcaPaintButton, 
   LcaPaintNavRailButton, LcaPaintComboBox, LcaScrollHost, LcaPaintNavList, 
-  LcaMarkdownView, LcaTerminalPanel, LcaThemeHooks, LcaThemedMainMenu, 
-  LcaThemedMenuBar, LcaThemedMenuFlyout, LcaOwlIconRes, LcaThemedWindowButton, 
-  LcaFormChrome, LcaThemedTitleBar;
+  LcaAgentDebugLog, LcaMarkdownView, LcaTerminalPanel, LcaThemeHooks, 
+  LcaThemedMainMenu, LcaThemedMenuBar, LcaThemedMenuFlyout, LcaOwlIconRes, 
+  LcaThemedWindowButton, LcaFormChrome, LcaThemedTitleBar;
 
 implementation
 

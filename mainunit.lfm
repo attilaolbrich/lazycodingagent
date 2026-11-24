@@ -927,13 +927,13 @@ object LazyCodingAgentForm: TLazyCodingAgentForm
               end
               object pnlChatFooter: TPanel
                 Left = 11
-                Height = 147
+                Height = 190
                 Top = 287
                 Width = 806
                 Align = alBottom
                 BorderSpacing.Around = 11
                 BevelOuter = bvNone
-                ClientHeight = 147
+                ClientHeight = 190
                 ClientWidth = 806
                 ParentBackground = False
                 TabOrder = 1
@@ -1066,10 +1066,116 @@ object LazyCodingAgentForm: TLazyCodingAgentForm
                     end
                   end
                 end
+                object pnlChatFooterRowBrowser: TPanel
+                  Left = 0
+                  Height = 86
+                  Top = 61
+                  Width = 806
+                  Align = alBottom
+                  BevelOuter = bvNone
+                  ClientHeight = 86
+                  ClientWidth = 806
+                  ParentBackground = False
+                  TabOrder = 2
+                  object pnlChatFooterRowBrowserInteractive: TPanel
+                    Left = 0
+                    Height = 43
+                    Top = 0
+                    Width = 806
+                    Align = alTop
+                    BevelOuter = bvNone
+                    ClientHeight = 43
+                    ClientWidth = 806
+                    ParentBackground = False
+                    TabOrder = 0
+                    object chkChatAllowBrowserInteractive: TCheckBox
+                      Left = 38
+                      Height = 33
+                      Top = 5
+                      Width = 28
+                      Align = alLeft
+                      BorderSpacing.Left = 11
+                      BorderSpacing.Top = 5
+                      BorderSpacing.Bottom = 5
+                      TabOrder = 0
+                      OnClick = ChkChatAllowBrowserInteractiveClick
+                    end
+                    object lblChatAllowBrowserInteractive: TLabel
+                      Cursor = crHandPoint
+                      Left = 66
+                      Height = 33
+                      Top = 5
+                      Width = 729
+                      Align = alClient
+                      BorderSpacing.Top = 5
+                      BorderSpacing.Right = 11
+                      BorderSpacing.Bottom = 5
+                      Caption = 'Allow interactive browser actions (click, fill, select)'
+                      OnClick = LblChatAllowBrowserInteractiveClick
+                    end
+                    object pnlChatFooterBrowserInteractiveSpacer: TPanel
+                      Left = 0
+                      Height = 43
+                      Top = 0
+                      Width = 27
+                      Align = alLeft
+                      BevelOuter = bvNone
+                      ParentBackground = False
+                      TabOrder = 1
+                    end
+                  end
+                  object pnlChatFooterRowBrowserLocalhost: TPanel
+                    Left = 0
+                    Height = 43
+                    Top = 43
+                    Width = 806
+                    Align = alTop
+                    BevelOuter = bvNone
+                    ClientHeight = 43
+                    ClientWidth = 806
+                    ParentBackground = False
+                    TabOrder = 1
+                    object chkChatAllowBrowserLocalhost: TCheckBox
+                      Left = 38
+                      Height = 33
+                      Top = 5
+                      Width = 28
+                      Align = alLeft
+                      BorderSpacing.Left = 11
+                      BorderSpacing.Top = 5
+                      BorderSpacing.Bottom = 5
+                      TabOrder = 0
+                      OnClick = ChkChatAllowBrowserLocalhostClick
+                    end
+                    object lblChatAllowBrowserLocalhost: TLabel
+                      Cursor = crHandPoint
+                      Left = 66
+                      Height = 33
+                      Top = 5
+                      Width = 729
+                      Align = alClient
+                      BorderSpacing.Top = 5
+                      BorderSpacing.Right = 11
+                      BorderSpacing.Bottom = 5
+                      Caption = 'Allow browser localhost and private URLs'
+                      OnClick = LblChatAllowBrowserLocalhostClick
+                    end
+                    object pnlChatFooterBrowserLocalhostSpacer: TPanel
+                      Left = 0
+                      Height = 43
+                      Top = 0
+                      Width = 27
+                      Align = alLeft
+                      BevelOuter = bvNone
+                      ParentBackground = False
+                      TabOrder = 1
+                    end
+                  end
+                end
                 object pnlChatFooterRowCheck: TPanel
                   Left = 0
                   Height = 43
-                  Top = 104
+                  Top = 147
                   Width = 806
                   Align = alBottom
                   BevelOuter = bvNone

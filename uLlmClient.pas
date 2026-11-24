@@ -18,6 +18,7 @@ type
     PromptTokens: Integer;
     CompletionTokens: Integer;
     TotalTokens: Integer;
+    HttpStatusCode: Integer;
     CacheUsage: TPromptCacheUsage;
     ParseFailures: array of string;
   end;
@@ -54,6 +55,7 @@ type
     FLearnWireLogging: Boolean;
     FLastWireRequestRedacted: string;
     FLastWireResponseRedacted: string;
+    FLastHttpStatusCode: Integer;
     function BuildOpenAiPayload(const AMessages: array of TChatMessage;
       const ATools: array of TToolDef; AStream: Boolean): string;
     function ChatCompletionsUrl: string;
@@ -99,6 +101,7 @@ type
     property LearnWireLogging: Boolean read FLearnWireLogging write FLearnWireLogging;
     property LastWireRequestRedacted: string read FLastWireRequestRedacted;
     property LastWireResponseRedacted: string read FLastWireResponseRedacted;
+    property LastHttpStatusCode: Integer read FLastHttpStatusCode;
   end;
 
 implementation
@@ -113,6 +116,14 @@ uses
   , uWindowsHTTP
   {$ENDIF}
   ;
+
+procedure ApplyHttpStatusToResponse(var AResult: TLlmResponse; AStatus: Integer);
+begin
+  AResult.HttpStatusCode := AStatus;
+  if (not AResult.Success) and (AStatus >= 400) and (Trim(AResult.ErrorMessage) <> '') and
+     (Pos('(HTTP ', AResult.ErrorMessage) = 0) then
+    AResult.ErrorMessage := AResult.ErrorMessage + Format(' (HTTP %d)', [AStatus]);
+end;
 
 procedure CopyOpenAiParseToResponse(const AParsed: TOpenAiParseResult;
   const ARootJson: string; var AResult: TLlmResponse);
@@ -264,6 +275,7 @@ begin
   FLearnWireLogging := False;
   FLastWireRequestRedacted := '';
   FLastWireResponseRedacted := '';
+  FLastHttpStatusCode := 0;
   SetLength(FPromptSegments, 0);
 end;
 
@@ -403,6 +415,12 @@ begin
       RootObj := TJSONObject(Data);
       if not ApplyOpenAiCompletionJson(Parsed, RootObj, Failures) then begin
         Result.ErrorMessage := Parsed.ErrorMessage;
+        if (Pos('Missing choices', Parsed.ErrorMessage) > 0) and (Length(AJsonStr) > 0) then begin
+          if Length(AJsonStr) > 400 then
+            Result.ErrorMessage := Result.ErrorMessage + ' Body: ' + Copy(AJsonStr, 1, 400) + '…'
+          else
+            Result.ErrorMessage := Result.ErrorMessage + ' Body: ' + AJsonStr;
+        end;
         Exit;
       end;
       CopyOpenAiParseToResponse(Parsed, AJsonStr, Result);
@@ -687,6 +705,7 @@ begin
   MaxAttempts := 1 + ClampLlmHttpRetryCount(FHttpRetryCount);
   for Attempt := 1 to MaxAttempts do begin
     Result := SendHttpPostOnce(AUrl, APayload, AResponse, StatusCode, AStreamResponse);
+    FLastHttpStatusCode := StatusCode;
     if not ShouldRetryLlmHttp(Attempt, MaxAttempts, Result, StatusCode, AResponse) then
       Exit;
     Sleep(LlmHttpRetryDelayMs(Attempt));
@@ -925,6 +944,9 @@ begin
     end;
     Result.Success := False;
   end;
+  Result.HttpStatusCode := FLastHttpStatusCode;
+  if not Result.Success then
+    ApplyHttpStatusToResponse(Result, FLastHttpStatusCode);
 end;
 
 end.

@@ -17,6 +17,8 @@ type
     function GetSession(const SessionId: string; out S: TBrowserManagedSession;
       out Err: string): Boolean;
     function DenyInteractive: TToolExecutionResult;
+    function EnsureBrowserInteractive: Boolean;
+    function EnsureBrowserLocalhost: Boolean;
     function DenySensitive(const Action: string): TToolExecutionResult;
     function DenyAutomationPaused(S: TBrowserManagedSession): TToolExecutionResult;
     function JsonOk(O: TJSONObject): TToolExecutionResult;
@@ -59,6 +61,13 @@ type
   end;
 
   TToolBrowserClose = class(TBrowserToolBase)
+  public
+    constructor Create(AContext: TAgentToolContext); reintroduce;
+    function GetDefinition: TToolDef; override;
+    function Execute(const Args: TJSONObject): TToolExecutionResult; override;
+  end;
+
+  TToolBrowserListSessions = class(TBrowserToolBase)
   public
     constructor Create(AContext: TAgentToolContext); reintroduce;
     function GetDefinition: TToolDef; override;
@@ -176,7 +185,39 @@ end;
 function TBrowserToolBase.DenyInteractive: TToolExecutionResult;
 begin
   Result := JsonErr('ACCESS_DENIED',
-    'Enable interactive browser actions for this chat session');
+    'Enable interactive browser actions for this chat session (chat footer checkbox or approve the permission dialog)');
+end;
+
+function TBrowserToolBase.EnsureBrowserInteractive: Boolean;
+var
+  AllowSession: Boolean;
+begin
+  if FContext.AllowBrowserInteractive then
+    Exit(True);
+  if not RequestBrowserInteractiveConfirm(
+    'Allow the agent to click, fill, and interact with pages in the browser?', AllowSession,
+    FContext.ChatSessionId) then
+    Exit(False);
+  FContext.AllowBrowserInteractive := True;
+  if AllowSession then
+    BrowserPermissionPersistInteractive(FContext.ChatSessionId, True);
+  Result := True;
+end;
+
+function TBrowserToolBase.EnsureBrowserLocalhost: Boolean;
+var
+  AllowSession: Boolean;
+begin
+  if FContext.AllowBrowserLocalhost then
+    Exit(True);
+  if not RequestBrowserLocalhostConfirm(
+    'Allow the browser to open localhost and private-network URLs for this chat session?',
+    AllowSession, FContext.ChatSessionId) then
+    Exit(False);
+  FContext.AllowBrowserLocalhost := True;
+  if AllowSession then
+    BrowserPermissionPersistLocalhost(FContext.ChatSessionId, True);
+  Result := True;
 end;
 
 function TBrowserToolBase.DenySensitive(const Action: string): TToolExecutionResult;
@@ -288,8 +329,13 @@ begin
         FContext.WorkspaceRoot, ErrKind, ErrMsg) then
         Exit(JsonErr(BrowserReadErrorKindToCode(ErrKind), ErrMsg));
       if (Pos('127.0.0.1', LowerCase(Url)) > 0) or (Pos('localhost', LowerCase(Url)) > 0) then
-        if not FContext.AllowBrowserLocalhost and not Cfg.AllowLocalhost then
-          Exit(JsonErr('ACCESS_DENIED', 'Localhost browsing requires permission'));
+        if not Cfg.AllowLocalhost and not FContext.AllowBrowserLocalhost then
+        begin
+          if not EnsureBrowserLocalhost then
+            Exit(JsonErr('USER_DENIED', 'User denied browser localhost permission'));
+        end;
+      if FContext.ChatSessionId <> '' then
+        BrowserSessionCloseForChatSession(FContext.ChatSessionId);
       if not BrowserSessionCreate(FContext.WorkspaceRoot, FContext.ChatSessionId,
         FContext.AllowBrowserLocalhost or Cfg.AllowLocalhost, Visible, Cfg,
         @Adapter.Check, S, ErrKind, ErrMsg) then
@@ -432,8 +478,8 @@ var
   Sel, Ref: string;
   O: TJSONObject;
 begin
-  if not FContext.AllowBrowserInteractive then
-    Exit(DenyInteractive);
+  if not EnsureBrowserInteractive then
+    Exit(JsonErr('USER_DENIED', 'User denied interactive browser permission'));
   if not GetSession(Args.Get('session_id', ''), S, Err) then
     Exit(JsonErr('SESSION_NOT_FOUND', Err));
   if S.Visible and S.AutomationPaused then
@@ -443,7 +489,8 @@ begin
   if BrowserActionLooksSensitive(Sel, Ref) and not FContext.AllowBrowserSensitive then
   begin
     AllowSession := False;
-    if not RequestBrowserSensitiveConfirm('Allow clicking: ' + Sel + '?', AllowSession) then
+    if not RequestBrowserSensitiveConfirm('Allow clicking: ' + Sel + '?', AllowSession,
+      FContext.ChatSessionId) then
       Exit(DenySensitive('click'));
     if AllowSession then
       FContext.AllowBrowserSensitive := True;
@@ -511,8 +558,8 @@ var
   O: TJSONObject;
   Val: string;
 begin
-  if not FContext.AllowBrowserInteractive then
-    Exit(DenyInteractive);
+  if not EnsureBrowserInteractive then
+    Exit(JsonErr('USER_DENIED', 'User denied interactive browser permission'));
   if not GetSession(Args.Get('session_id', ''), S, Err) then
     Exit(JsonErr('SESSION_NOT_FOUND', Err));
   if S.Visible and S.AutomationPaused then
@@ -607,6 +654,30 @@ end;
 constructor TToolBrowserClose.Create(AContext: TAgentToolContext);
 begin
   inherited Create(AContext);
+end;
+
+constructor TToolBrowserListSessions.Create(AContext: TAgentToolContext);
+begin
+  inherited Create(AContext);
+end;
+
+function TToolBrowserListSessions.GetDefinition: TToolDef;
+begin
+  Result.Name := 'browser_list_sessions';
+  Result.Description :=
+    'List open browser sessions (session_id, visible, automation_paused, last_activity). ' +
+    'Use when a browser slot is busy or to find which session_id to close or reuse.';
+  SetLength(Result.Params, 0);
+end;
+
+function TToolBrowserListSessions.Execute(const Args: TJSONObject): TToolExecutionResult;
+var
+  Root: TJSONObject;
+begin
+  if Args <> nil then ;
+  Root := TJSONObject(GetJSON(BrowserOpenSessionsJson));
+  Root.Add('status', 'ok');
+  Result := JsonOk(Root);
 end;
 
 function TToolBrowserClose.GetDefinition: TToolDef;
@@ -832,8 +903,8 @@ var
   Adapter: TBrowserCancelAdapter;
   O: TJSONObject;
 begin
-  if not FContext.AllowBrowserInteractive then
-    Exit(DenyInteractive);
+  if not EnsureBrowserInteractive then
+    Exit(JsonErr('USER_DENIED', 'User denied interactive browser permission'));
   if not GetSession(Args.Get('session_id', ''), S, Err) then
     Exit(JsonErr('SESSION_NOT_FOUND', Err));
   if S.Visible and S.AutomationPaused then
@@ -893,6 +964,8 @@ var
   Adapter: TBrowserCancelAdapter;
   O: TJSONObject;
 begin
+  if not EnsureBrowserInteractive then
+    Exit(JsonErr('USER_DENIED', 'User denied interactive browser permission'));
   if not GetSession(Args.Get('session_id', ''), S, Err) then
     Exit(JsonErr('SESSION_NOT_FOUND', Err));
   if S.Visible and S.AutomationPaused then

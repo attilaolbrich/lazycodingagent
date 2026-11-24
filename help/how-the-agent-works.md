@@ -9,7 +9,7 @@ This section is for learning how LazyCodingAgent ties together the LLM, tools, a
 3. A **background thread** runs the agent loop so the UI stays responsive.
 4. The UI receives events for new messages, tool calls, and state (thinking, executing tools, finished, error).
 
-You can start runs in multiple sessions; each engine is independent.
+You can start runs in multiple sessions; each engine is independent. Each run thread keeps its own **tool context** (workspace paths, cancel flag, session id), so parallel tool execution does not cross wires between sessions.
 
 ## The ReAct loop (reason + act)
 

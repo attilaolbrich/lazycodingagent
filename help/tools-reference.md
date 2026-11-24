@@ -166,6 +166,7 @@ Persistent **browser sessions** for interactive testing (Chromium via CDP). Typi
 | `browser_network` | Request metadata (no bodies) |
 | `browser_set_viewport` | Emulated viewport size |
 | `browser_close` | End session |
+| `browser_list_sessions` | List open sessions (`session_id`, visible, paused, last activity) when a slot is busy |
 | `browser_resume_automation` | Allow interactive tools on a visible session after manual user steps |
 | `browser_pause_automation` | Block interactive tools on a visible session so the user can work freely |
 

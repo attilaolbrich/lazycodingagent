@@ -21,6 +21,7 @@ type
     AEntryIndex: Integer) of object;
   THubToolErrorLogEvent = procedure(Sender: TObject; const ASessionId: string;
     AEntryIndex: Integer) of object;
+  THubHistoryRepairedEvent = procedure(Sender: TObject; const ASessionId: string) of object;
 
   TSessionRuntime = class
   public
@@ -44,6 +45,7 @@ type
     FOnToolResult: THubToolResultEvent;
     FOnExecutionLogAdded: THubExecutionLogEvent;
     FOnToolErrorAdded: THubToolErrorLogEvent;
+    FOnHistoryRepaired: THubHistoryRepairedEvent;
     function IndexOfRuntime(const ASessionId: string): Integer;
     function IndexOfEngine(AEngine: TAgentEngine): Integer;
     procedure WireEngine(ARuntime: TSessionRuntime);
@@ -56,6 +58,7 @@ type
       const AResult: TToolExecutionResult);
     procedure EngineExecutionLogAdded(Sender: TObject; AEntryIndex: Integer);
     procedure EngineToolErrorAdded(Sender: TObject; AEntryIndex: Integer);
+    procedure EngineHistoryRepaired(Sender: TObject);
   public
     constructor Create(const AWorkspaceId, AWorkspaceRoot: string);
     destructor Destroy; override;
@@ -93,6 +96,8 @@ type
       write FOnExecutionLogAdded;
     property OnToolErrorAdded: THubToolErrorLogEvent read FOnToolErrorAdded
       write FOnToolErrorAdded;
+    property OnHistoryRepaired: THubHistoryRepairedEvent read FOnHistoryRepaired
+      write FOnHistoryRepaired;
   end;
 
   TChatSessionHubManager = class
@@ -104,6 +109,7 @@ type
     destructor Destroy; override;
     function GetOrCreate(const AWorkspaceId, AWorkspaceRoot: string): TChatSessionHub;
     function FindHub(const AWorkspaceId: string): TChatSessionHub;
+    function FindHubBySessionId(const ASessionId: string): TChatSessionHub;
     procedure RemoveHub(const AWorkspaceId: string; ACancelRuns: Boolean;
       ADeleteSessionStore: Boolean = True);
     procedure ShutdownAll(ACancelRuns: Boolean);
@@ -139,6 +145,7 @@ begin
     Engine.OnToolResult := nil;
     Engine.OnExecutionLogAdded := nil;
     Engine.OnToolErrorAdded := nil;
+    Engine.OnHistoryRepaired := nil;
     Engine.ExecutionLog := nil;
     Engine.ToolErrorLog := nil;
     Engine.Free;
@@ -194,6 +201,7 @@ begin
   ARuntime.Engine.OnToolResult := @EngineToolResult;
   ARuntime.Engine.OnExecutionLogAdded := @EngineExecutionLogAdded;
   ARuntime.Engine.OnToolErrorAdded := @EngineToolErrorAdded;
+  ARuntime.Engine.OnHistoryRepaired := @EngineHistoryRepaired;
 end;
 
 procedure TChatSessionHub.UnwireEngine(AEngine: TAgentEngine);
@@ -205,6 +213,7 @@ begin
   AEngine.OnToolResult := nil;
   AEngine.OnExecutionLogAdded := nil;
   AEngine.OnToolErrorAdded := nil;
+  AEngine.OnHistoryRepaired := nil;
 end;
 
 procedure TChatSessionHub.EngineStateChange(Sender: TObject; AOldState, ANewState: TAgentState;
@@ -232,6 +241,19 @@ begin
   Sid := FRuntimes[Idx].SessionId;
   if Assigned(FOnMessageAdded) then
     FOnMessageAdded(Self, Sid, AMessage);
+end;
+
+procedure TChatSessionHub.EngineHistoryRepaired(Sender: TObject);
+var
+  Idx: Integer;
+  Sid: string;
+begin
+  Idx := IndexOfEngine(TAgentEngine(Sender));
+  if Idx < 0 then Exit;
+  Sid := FRuntimes[Idx].SessionId;
+  SaveSessionToStore(Sid);
+  if Assigned(FOnHistoryRepaired) then
+    FOnHistoryRepaired(Self, Sid);
 end;
 
 procedure TChatSessionHub.EngineToolCall(Sender: TObject; const AToolName, AArgs: string);
@@ -318,6 +340,8 @@ var
 begin
   for I := 0 to High(FRuntimes) do begin
     E := FRuntimes[I].Engine;
+    if E.IsRunActive then
+      Continue;
     E.Client.Provider := AProvider;
     E.Client.ApiKey := AApiKey;
     E.Client.BaseUrl := ABaseUrl;
@@ -490,6 +514,23 @@ begin
     Result := nil
   else
     Result := TChatSessionHub(FHubs.Objects[Idx]);
+end;
+
+function TChatSessionHubManager.FindHubBySessionId(const ASessionId: string): TChatSessionHub;
+var
+  I: Integer;
+  H: TChatSessionHub;
+  Info: TChatSessionInfo;
+begin
+  Result := nil;
+  if ASessionId = '' then Exit;
+  for I := 0 to FHubs.Count - 1 do begin
+    H := TChatSessionHub(FHubs.Objects[I]);
+    if H.HasEngine(ASessionId) then
+      Exit(H);
+    if H.Store.FindSessionInfo(ASessionId, Info) then
+      Exit(H);
+  end;
 end;
 
 procedure TChatSessionHubManager.RemoveHub(const AWorkspaceId: string; ACancelRuns: Boolean;

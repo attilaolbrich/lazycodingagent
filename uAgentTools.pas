@@ -84,6 +84,7 @@ begin
   RegisterTool(TToolBrowserFill.Create(FContext));
   RegisterTool(TToolBrowserWait.Create(FContext));
   RegisterTool(TToolBrowserClose.Create(FContext));
+  RegisterTool(TToolBrowserListSessions.Create(FContext));
   RegisterTool(TToolBrowserScreenshot.Create(FContext));
   RegisterTool(TToolBrowserConsole.Create(FContext));
   RegisterTool(TToolBrowserNetwork.Create(FContext));

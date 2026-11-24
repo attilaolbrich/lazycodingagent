@@ -333,7 +333,19 @@ begin
   end;
 
   if ARootObj.IndexOfName('choices') < 0 then begin
-    AResult.ErrorMessage := 'Missing choices in completion response.';
+    if ARootObj.IndexOfName('message') >= 0 then
+      AResult.ErrorMessage := ARootObj.Get('message', '')
+    else if ARootObj.IndexOfName('detail') >= 0 then
+    begin
+      if ARootObj.Types['detail'] = jtString then
+        AResult.ErrorMessage := ARootObj.Get('detail', '')
+      else if ARootObj.Types['detail'] = jtArray then
+        AResult.ErrorMessage := ARootObj.Arrays['detail'].AsJSON;
+    end
+    else if ARootObj.IndexOfName('title') >= 0 then
+      AResult.ErrorMessage := ARootObj.Get('title', '');
+    if Trim(AResult.ErrorMessage) = '' then
+      AResult.ErrorMessage := 'Missing choices in completion response.';
     Exit;
   end;
 

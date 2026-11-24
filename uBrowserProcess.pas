@@ -37,6 +37,9 @@ uses
   {$IFDEF UNIX}, BaseUnix, Unix{$ENDIF}
   {$IFDEF MSWINDOWS}, Windows{$ENDIF};
 
+const
+  BROWSER_STOP_GRACE_MS = 4000;
+
 {$IFDEF MSWINDOWS}
 type
   TWindowsJobObject = class
@@ -132,6 +135,8 @@ begin
 end;
 
 procedure TBrowserProcess.Stop;
+var
+  T0: QWord;
 begin
   if Assigned(FProcess) then
   begin
@@ -139,6 +144,19 @@ begin
     begin
       try
         FProcess.Terminate(0);
+        T0 := GetTickCount64;
+        while FProcess.Running and (GetTickCount64 - T0 < QWord(BROWSER_STOP_GRACE_MS)) do
+          Sleep(50);
+        {$IFDEF UNIX}
+        if FProcess.Running and (FOwnedPid > 0) then
+          FpKill(FOwnedPid, SIGKILL);
+        {$ENDIF}
+        {$IFDEF MSWINDOWS}
+        if FProcess.Running then
+        begin
+          TerminateProcess(FProcess.Handle, 1);
+        end;
+        {$ENDIF}
         FProcess.WaitOnExit;
       except
       end;

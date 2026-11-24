@@ -42,6 +42,8 @@ fpc -Mobjfpc -Scghi -Fu"$ROOT" -Fu"$ROOT/packages/LcaDesignSystem/src" \
   "${FPC_EXTRA[@]}" -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_llm_prompt_stability.pas
 fpc -Mobjfpc -Scghi -Fu"$ROOT" -Fu"$ROOT/packages/LcaDesignSystem/src" \
   "${FPC_EXTRA[@]}" -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_llm_openai_tools.pas
+fpc -Mobjfpc -Scghi -Fu"$ROOT" "${FPC_EXTRA[@]}" \
+  -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_llm_message_repair.pas
 fpc -Mobjfpc -Scghi -Fu"$ROOT" -Fu"$ROOT/packages/LcaDesignSystem/src" \
   "${FPC_EXTRA[@]}" -FU"$TEST_OUTPUT" -FE"$TEST_OUTPUT" tests/test_llm_tool_schemas.pas
 fpc -Mobjfpc -Scghi -Fu"$ROOT" "${FPC_EXTRA[@]}" \
@@ -63,6 +65,7 @@ fi
 "$TEST_OUTPUT/test_llm_provider_payload"
 "$TEST_OUTPUT/test_llm_prompt_stability"
 "$TEST_OUTPUT/test_llm_openai_tools"
+"$TEST_OUTPUT/test_llm_message_repair"
 "$TEST_OUTPUT/test_llm_tool_schemas"
 "$TEST_OUTPUT/test_mcp_mentions"
 "$TEST_OUTPUT/test_mcp_json_tools"

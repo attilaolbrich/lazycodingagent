@@ -18,6 +18,7 @@ BROWSER_AUTOMATION_TOOLS = frozenset({
     'browser_wait', 'browser_close', 'browser_screenshot', 'browser_console',
     'browser_network', 'browser_select', 'browser_set_viewport',
     'browser_resume_automation', 'browser_pause_automation',
+    'browser_list_sessions',
 })
 
 

@@ -104,6 +104,10 @@
         <UnitName Value="LcaPaintNavList"/>
       </Item>
       <Item>
+        <Filename Value="src\LcaAgentDebugLog.pas"/>
+        <UnitName Value="LcaAgentDebugLog"/>
+      </Item>
+      <Item>
         <Filename Value="src\LcaMarkdownView.pas"/>
         <UnitName Value="LcaMarkdownView"/>
       </Item>

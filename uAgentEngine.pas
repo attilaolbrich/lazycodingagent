@@ -19,6 +19,7 @@ type
     const AResult: TToolExecutionResult) of object;
   TAgentExecutionLogEvent = procedure(Sender: TObject; AEntryIndex: Integer) of object;
   TAgentToolErrorLogEvent = procedure(Sender: TObject; AEntryIndex: Integer) of object;
+  TAgentHistoryRepairedEvent = procedure(Sender: TObject) of object;
 
   { TAgentEngine - Coordinates conversation, autonomous ReAct loops, and tool execution }
   TAgentEngine = class
@@ -43,6 +44,7 @@ type
     FOnToolResult: TAgentToolResultEvent;
     FOnExecutionLogAdded: TAgentExecutionLogEvent;
     FOnToolErrorAdded: TAgentToolErrorLogEvent;
+    FOnHistoryRepaired: TAgentHistoryRepairedEvent;
     FExecutionLog: TAgentExecutionLog;
     FToolErrorLog: TAgentToolErrorLog;
 
@@ -70,6 +72,8 @@ type
     FRunSnapPromptCacheSettings: TPromptCacheSettings;
     FRunSnapToolCallingCaps: TLlmToolCallingCapabilities;
     FRunSnapLearnWireLogging: Boolean;
+    FRunSnapMaxSteps: Integer;
+    FRunSnapWorkspaceRoot: string;
 
     FToolCallingCapabilities: TLlmToolCallingCapabilities;
     FLearnWireLogging: Boolean;
@@ -94,6 +98,10 @@ type
       const AToolDefs: array of TToolDef; AStep: Integer);
     procedure AppendTruncationNoticeIfNeeded(var AContent: string;
       const AFinishReason: string; ATruncationRetriesExhausted: Boolean);
+    function EnsureToolTurnIntegrity: Boolean;
+    function EnsureToolTurnIntegrityAggressive: Boolean;
+    procedure NotifyHistoryRepaired;
+    procedure AppendInterruptedToolResults(const ACalls: TToolCallArray; AFromIndex: Integer);
 
     procedure SetRunProgress(AStep: Integer);
     procedure SetState(ANewState: TAgentState);
@@ -134,6 +142,11 @@ type
     function ExecuteToolDirect(const AName, AArgumentsJson: string;
       AMode: TWorkspaceMode): TToolExecutionResult;
 
+    procedure DeliverToolCallToUI(const AName, AArgs: string);
+    procedure DeliverToolResultToUI(const AName, AArgs: string; const AResult: TToolExecutionResult);
+    procedure DeliverExecutionLogToUI(AIndex: Integer);
+    procedure DeliverToolErrorToUI(AIndex: Integer);
+
     function GetMessageCount: Integer;
     function GetMessage(AIndex: Integer): TChatMessage;
 
@@ -158,6 +171,8 @@ type
       write FOnExecutionLogAdded;
     property OnToolErrorAdded: TAgentToolErrorLogEvent read FOnToolErrorAdded
       write FOnToolErrorAdded;
+    property OnHistoryRepaired: TAgentHistoryRepairedEvent read FOnHistoryRepaired
+      write FOnHistoryRepaired;
     property ExecutionLog: TAgentExecutionLog read FExecutionLog write FExecutionLog;
     property ToolErrorLog: TAgentToolErrorLog read FToolErrorLog write FToolErrorLog;
     procedure ReportRunException(const E: Exception);
@@ -169,7 +184,8 @@ type
 implementation
 
 uses
-  Forms, uAgentRunThread, uAgentToolBase, uChatImageStore;
+  Forms, uAgentRunThread, uAgentToolBase, uChatImageStore, uLlmMessageRepair,
+  uAgentUiSyncJobs;
 
 function TruncationHintForFinishReason(const AReason: string): string;
 begin
@@ -256,6 +272,8 @@ begin
   FRunSnapPromptCacheSettings := FPromptCacheSettings;
   FRunSnapToolCallingCaps := FToolCallingCapabilities;
   FRunSnapLearnWireLogging := FLearnWireLogging;
+  FRunSnapMaxSteps := FMaxSteps;
+  FRunSnapWorkspaceRoot := FContext.WorkspaceRoot;
 end;
 
 procedure TAgentEngine.ApplyClientSnapshot;
@@ -274,6 +292,38 @@ begin
   FClient.LearnWireLogging := FRunSnapLearnWireLogging;
   FToolCallingCapabilities := FRunSnapToolCallingCaps;
   FLearnWireLogging := FRunSnapLearnWireLogging;
+  FMaxSteps := FRunSnapMaxSteps;
+  if FRunSnapWorkspaceRoot <> '' then
+    FContext.WorkspaceRoot := FRunSnapWorkspaceRoot;
+end;
+
+procedure TAgentEngine.DeliverToolCallToUI(const AName, AArgs: string);
+begin
+  if FDestroying then Exit;
+  if Assigned(FOnToolCall) then
+    FOnToolCall(Self, AName, AArgs);
+end;
+
+procedure TAgentEngine.DeliverToolResultToUI(const AName, AArgs: string;
+  const AResult: TToolExecutionResult);
+begin
+  if FDestroying then Exit;
+  if Assigned(FOnToolResult) then
+    FOnToolResult(Self, AName, AArgs, AResult);
+end;
+
+procedure TAgentEngine.DeliverExecutionLogToUI(AIndex: Integer);
+begin
+  if FDestroying then Exit;
+  if Assigned(FOnExecutionLogAdded) then
+    FOnExecutionLogAdded(Self, AIndex);
+end;
+
+procedure TAgentEngine.DeliverToolErrorToUI(AIndex: Integer);
+begin
+  if FDestroying then Exit;
+  if Assigned(FOnToolErrorAdded) then
+    FOnToolErrorAdded(Self, AIndex);
 end;
 
 procedure TAgentEngine.SyncStateChange;
@@ -313,10 +363,9 @@ end;
 
 procedure TAgentEngine.NotifyExecutionLogAdded(AEntryIndex: Integer);
 begin
-  if FInWorkerRun then begin
-    FSyncLogEntryIndex := AEntryIndex;
-    TThread.Queue(nil, @SyncExecutionLogAdded);
-  end else if Assigned(FOnExecutionLogAdded) then
+  if FInWorkerRun then
+    TAgentUiSyncJobs.QueueExecutionLog(Self, AEntryIndex)
+  else if Assigned(FOnExecutionLogAdded) then
     FOnExecutionLogAdded(Self, AEntryIndex);
 end;
 
@@ -329,10 +378,9 @@ end;
 
 procedure TAgentEngine.NotifyToolErrorAdded(AEntryIndex: Integer);
 begin
-  if FInWorkerRun then begin
-    FSyncToolErrorIndex := AEntryIndex;
-    TThread.Queue(nil, @SyncToolErrorAdded);
-  end else if Assigned(FOnToolErrorAdded) then
+  if FInWorkerRun then
+    TAgentUiSyncJobs.QueueToolError(Self, AEntryIndex)
+  else if Assigned(FOnToolErrorAdded) then
     FOnToolErrorAdded(Self, AEntryIndex);
 end;
 
@@ -529,6 +577,7 @@ end;
 procedure TAgentEngine.LoadConversation(const AMessages: TChatMessageArray);
 var
   I: Integer;
+  Msgs: TChatMessageArray;
 begin
   RequestCancel;
   WaitForRunComplete;
@@ -540,10 +589,74 @@ begin
   finally
     FDataLock.Leave;
   end;
+  EnsureToolTurnIntegrity;
   FContext.ClearSession;
   if Assigned(FMcp) then
-    FMcp.RescanMessages(AMessages);
+  begin
+    ExportMessages(Msgs);
+    FMcp.RescanMessages(Msgs);
+  end;
   SetState(asIdle);
+end;
+
+function TAgentEngine.EnsureToolTurnIntegrity: Boolean;
+var
+  Msgs: TChatMessageArray;
+begin
+  Result := False;
+  FDataLock.Enter;
+  try
+    Msgs := FMessages;
+  finally
+    FDataLock.Leave;
+  end;
+  if not RepairToolHistory(Msgs, Msgs, False) then
+    Exit;
+  FDataLock.Enter;
+  try
+    FMessages := Msgs;
+  finally
+    FDataLock.Leave;
+  end;
+  Result := True;
+  NotifyHistoryRepaired;
+end;
+
+function TAgentEngine.EnsureToolTurnIntegrityAggressive: Boolean;
+var
+  Msgs: TChatMessageArray;
+begin
+  Result := False;
+  FDataLock.Enter;
+  try
+    Msgs := FMessages;
+  finally
+    FDataLock.Leave;
+  end;
+  if not RepairToolHistory(Msgs, Msgs, True) then
+    Exit;
+  FDataLock.Enter;
+  try
+    FMessages := Msgs;
+  finally
+    FDataLock.Leave;
+  end;
+  Result := True;
+  NotifyHistoryRepaired;
+end;
+
+procedure TAgentEngine.NotifyHistoryRepaired;
+begin
+  if Assigned(FOnHistoryRepaired) then
+    FOnHistoryRepaired(Self);
+end;
+
+procedure TAgentEngine.AppendInterruptedToolResults(const ACalls: TToolCallArray; AFromIndex: Integer);
+var
+  J: Integer;
+begin
+  for J := AFromIndex to High(ACalls) do
+    AppendMessage(MakeInterruptedToolMessage(ACalls[J].Id));
 end;
 
 procedure TAgentEngine.ExportMessages(out AMessages: TChatMessageArray);
@@ -593,6 +706,7 @@ end;
 
 procedure TAgentEngine.RunThreadFinished;
 begin
+  EnsureToolTurnIntegrity;
   FRunLock.Enter;
   try
     FRunActive := False;
@@ -800,6 +914,7 @@ var
   TruncationExhausted: Boolean;
   UserLogText: string;
   AttIdx: Integer;
+  LlmRecoveryStage: Integer;
 begin
   FInWorkerRun := True;
   FSyncRunStep := 0;
@@ -807,6 +922,7 @@ begin
   LastResponseHadTools := False;
   FSummarizeAttemptsThisRun := 0;
   FLastPromptTokens := 0;
+  LlmRecoveryStage := 0;
   try
     ApplyClientSnapshot;
     if Trim(AModel) <> '' then
@@ -880,6 +996,17 @@ begin
           end;
         end;
 
+        EnsureToolTurnIntegrity;
+
+        FDataLock.Enter;
+        try
+          MessagesCopy := FMessages;
+        finally
+          FDataLock.Leave;
+        end;
+
+        MessagesCopy := PrepareMessagesForLlmApi(MessagesCopy);
+
         RequestContext := FormatMessagesForDisplay(MessagesCopy, ToolDefs,
           ToolDefinitionsSentInApiPayload);
 
@@ -893,8 +1020,28 @@ begin
             ContextRetry := True;
             Continue;
           end;
+          if LlmRecoveryStage = 0 then begin
+            Inc(LlmRecoveryStage);
+            EnsureToolTurnIntegrity;
+            ContextRetry := True;
+            Continue;
+          end;
+          if LlmRecoveryStage = 1 then begin
+            Inc(LlmRecoveryStage);
+            EnsureToolTurnIntegrityAggressive;
+            ContextRetry := True;
+            Continue;
+          end;
           AssistantMsg := StringToChatRole('assistant');
           AssistantMsg.Content := '❌ LLM Request Error: ' + Resp.ErrorMessage;
+          if IsMissingToolOutputError(Resp.ErrorMessage) then
+            AssistantMsg.Content := AssistantMsg.Content + LineEnding + LineEnding +
+              '*(Interrupted tool calls left the chat history invalid. History was repaired automatically. ' +
+              'If this error persists, start a **New Chat** session for a clean transcript.)*'
+          else if IsLikelyProviderOutage(Resp.ErrorMessage) or (Resp.HttpStatusCode >= 500) then
+            AssistantMsg.Content := AssistantMsg.Content + LineEnding + LineEnding +
+              '*(Provider or network issue, or history could not be cleaned further. Try again later, switch models, ' +
+              'or start a **New Chat** session.)*';
           AppendMessage(AssistantMsg);
           SetState(asError);
           Exit;
@@ -930,12 +1077,14 @@ begin
       HadToolCalls := False;
       SetState(asExecutingTool);
       for I := Low(Resp.ToolCalls) to High(Resp.ToolCalls) do begin
-        if GetCancelRequested then Break;
+        if GetCancelRequested then begin
+          AppendInterruptedToolResults(Resp.ToolCalls, I);
+          Break;
+        end;
 
         HadToolCalls := True;
-        FSyncToolName := Resp.ToolCalls[I].Name;
-        FSyncToolArgs := Resp.ToolCalls[I].ArgumentsJson;
-        TThread.Queue(nil, @SyncToolCall);
+        TAgentUiSyncJobs.QueueToolCall(Self, Resp.ToolCalls[I].Name,
+          Resp.ToolCalls[I].ArgumentsJson);
 
         if not JsonToolArgumentsWellFormed(Resp.ToolCalls[I].ArgumentsJson) then
           ToolResult := ToolResultFromJson(ToolError(
@@ -951,9 +1100,8 @@ begin
           ToolResult := FTools.ExecuteTool(Resp.ToolCalls[I].Name,
             Resp.ToolCalls[I].ArgumentsJson, AMode);
 
-        FSyncToolName := Resp.ToolCalls[I].Name;
-        FSyncToolResult := ToolResult;
-        TThread.Queue(nil, @SyncToolResult);
+        TAgentUiSyncJobs.QueueToolResult(Self, Resp.ToolCalls[I].Name,
+          Resp.ToolCalls[I].ArgumentsJson, ToolResult);
 
         if Assigned(FExecutionLog) then
           NotifyExecutionLogAdded(FExecutionLog.AddTool(Resp.ToolCalls[I].Name,
@@ -990,6 +1138,7 @@ begin
       SetState(asFinished);
     end;
   finally
+    EnsureToolTurnIntegrity;
     FInWorkerRun := False;
     FSyncRunStep := 0;
     FSyncRunMaxSteps := FMaxSteps;

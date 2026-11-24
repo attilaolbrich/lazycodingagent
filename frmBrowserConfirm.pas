@@ -10,6 +10,8 @@ uses
 
 function ConfirmSensitiveBrowserAction(const AMessage: string; ATheme: TThemeKind;
   out AAllowForSession: Boolean): Boolean;
+function ConfirmBrowserPermissionAction(const ATitle, AMessage: string; ATheme: TThemeKind;
+  out AAllowForSession: Boolean): Boolean;
 
 type
   { TBrowserConfirmForm }
@@ -30,8 +32,8 @@ type
     FTheme: TThemeKind;
     procedure ApplyTheme(ATheme: TThemeKind);
   public
-    class function Execute(AOwner: TComponent; const AMessage: string; ATheme: TThemeKind;
-      out AAllowForSession: Boolean): Boolean;
+    class function Execute(AOwner: TComponent; const ATitle, AMessage: string;
+      ATheme: TThemeKind; out AAllowForSession: Boolean): Boolean;
   end;
 
 implementation
@@ -41,10 +43,17 @@ implementation
 function ConfirmSensitiveBrowserAction(const AMessage: string; ATheme: TThemeKind;
   out AAllowForSession: Boolean): Boolean;
 begin
-  Result := TBrowserConfirmForm.Execute(nil, AMessage, ATheme, AAllowForSession);
+  Result := ConfirmBrowserPermissionAction('Sensitive browser action', AMessage, ATheme,
+    AAllowForSession);
 end;
 
-class function TBrowserConfirmForm.Execute(AOwner: TComponent; const AMessage: string;
+function ConfirmBrowserPermissionAction(const ATitle, AMessage: string; ATheme: TThemeKind;
+  out AAllowForSession: Boolean): Boolean;
+begin
+  Result := TBrowserConfirmForm.Execute(nil, ATitle, AMessage, ATheme, AAllowForSession);
+end;
+
+class function TBrowserConfirmForm.Execute(AOwner: TComponent; const ATitle, AMessage: string;
   ATheme: TThemeKind; out AAllowForSession: Boolean): Boolean;
 var
   Dlg: TBrowserConfirmForm;
@@ -52,6 +61,8 @@ begin
   AAllowForSession := False;
   Dlg := TBrowserConfirmForm.Create(AOwner);
   try
+    if Trim(ATitle) <> '' then
+      Dlg.Caption := ATitle;
     Dlg.lblMessage.Caption := AMessage;
     Dlg.FTheme := ATheme;
     Dlg.ApplyTheme(ATheme);

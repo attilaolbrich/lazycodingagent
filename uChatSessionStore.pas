@@ -5,7 +5,7 @@ unit uChatSessionStore;
 interface
 
 uses
-  Classes, SysUtils, fpjson, uAgentTypes;
+  Classes, SysUtils, SyncObjs, fpjson, uAgentTypes;
 
 type
   TChatSessionInfo = record
@@ -26,12 +26,14 @@ type
     FWorkspaceId: string;
     FSessions: array of TChatSessionInfo;
     FLastSessionId: string;
+    FFileLock: TCriticalSection;
     function SessionFilePath(const AWorkspaceId: string): string;
     function IndexOfSession(const ASessionId: string): Integer;
     procedure EnsureLoaded;
     function ReadRootFromFile(out ARoot: TJSONObject): Boolean;
     procedure WriteRootToFile(ARoot: TJSONObject);
   public
+    constructor Create;
     destructor Destroy; override;
     procedure BindWorkspace(const AWorkspaceId: string);
     function SessionCount: Integer;
@@ -224,8 +226,15 @@ end;
 
 { TChatSessionStore }
 
+constructor TChatSessionStore.Create;
+begin
+  inherited Create;
+  FFileLock := TCriticalSection.Create;
+end;
+
 destructor TChatSessionStore.Destroy;
 begin
+  FFileLock.Free;
   inherited Destroy;
 end;
 
@@ -250,7 +259,12 @@ begin
     FWorkspaceId := AWorkspaceId;
     SetLength(FSessions, 0);
     FLastSessionId := '';
-    EnsureLoaded;
+    FFileLock.Enter;
+    try
+      EnsureLoaded;
+    finally
+      FFileLock.Leave;
+    end;
   end;
 end;
 
@@ -283,7 +297,7 @@ end;
 
 procedure TChatSessionStore.WriteRootToFile(ARoot: TJSONObject);
 var
-  Path, Dir: string;
+  Path, Dir, TmpPath: string;
   SL: TStringList;
 begin
   if (FWorkspaceId = '') or (ARoot = nil) then Exit;
@@ -291,12 +305,18 @@ begin
   Dir := ExtractFilePath(Path);
   if not DirectoryExists(Dir) then
     ForceDirectories(Dir);
+  TmpPath := Path + '.tmp';
   SL := TStringList.Create;
   try
     SL.Text := ARoot.AsJSON;
-    SL.SaveToFile(Path);
+    SL.SaveToFile(TmpPath);
+    if FileExists(Path) then
+      DeleteFile(Path);
+    RenameFile(TmpPath, Path);
   finally
     SL.Free;
+    if FileExists(TmpPath) then
+      DeleteFile(TmpPath);
   end;
 end;
 
@@ -358,6 +378,8 @@ var
   Info: TChatSessionInfo;
   MsgArr: TJSONArray;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Info.Id := NewSessionId;
   if Trim(ATitle) <> '' then
@@ -405,6 +427,9 @@ begin
   SetLength(FSessions, Length(FSessions) + 1);
   FSessions[High(FSessions)] := Info;
   Result := Info.Id;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 function TChatSessionStore.LoadSessionMessages(const ASessionId: string;
@@ -416,6 +441,8 @@ var
 begin
   Result := False;
   SetLength(AMessages, 0);
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   if not ReadRootFromFile(Root) then Exit;
   try
@@ -441,6 +468,9 @@ begin
   finally
     Root.Free;
   end;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.SaveSessionMessages(const ASessionId: string;
@@ -452,6 +482,8 @@ var
   MsgObj: TJSONObject;
 begin
   if FWorkspaceId = '' then Exit;
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -494,6 +526,9 @@ begin
   Root.Add('lastSessionId', FLastSessionId);
   WriteRootToFile(Root);
   Root.Free;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.DeleteSession(const ASessionId: string);
@@ -503,6 +538,8 @@ var
   I, Idx: Integer;
   NewArr: TJSONArray;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -543,18 +580,26 @@ begin
       FLastSessionId := FSessions[High(FSessions)].Id
     else
       FLastSessionId := '';
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.DeleteAllForWorkspace(const AWorkspaceId: string);
 var
   Path: string;
 begin
+  FFileLock.Enter;
+  try
   Path := SessionFilePath(AWorkspaceId);
   if FileExists(Path) then
     DeleteFile(Path);
   if FWorkspaceId = AWorkspaceId then begin
     SetLength(FSessions, 0);
     FLastSessionId := '';
+  end;
+  finally
+    FFileLock.Leave;
   end;
 end;
 
@@ -576,6 +621,8 @@ var
   Arr: TJSONArray;
   I, Idx: Integer;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -607,6 +654,9 @@ begin
   finally
     Root.Free;
   end;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.SetAllowModifyOutside(const ASessionId: string; AValue: Boolean);
@@ -615,6 +665,8 @@ var
   Arr: TJSONArray;
   I, Idx: Integer;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -638,6 +690,9 @@ begin
   finally
     Root.Free;
   end;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.SetAllowBrowserLocalhost(const ASessionId: string; AValue: Boolean);
@@ -646,6 +701,8 @@ var
   Arr: TJSONArray;
   I, Idx: Integer;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -667,6 +724,9 @@ begin
   finally
     Root.Free;
   end;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.SetAllowBrowserInteractive(const ASessionId: string; AValue: Boolean);
@@ -675,6 +735,8 @@ var
   Arr: TJSONArray;
   I, Idx: Integer;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -696,6 +758,9 @@ begin
   finally
     Root.Free;
   end;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.SetAllowBrowserSensitive(const ASessionId: string; AValue: Boolean);
@@ -704,6 +769,8 @@ var
   Arr: TJSONArray;
   I, Idx: Integer;
 begin
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -725,6 +792,9 @@ begin
   finally
     Root.Free;
   end;
+  finally
+    FFileLock.Leave;
+  end;
 end;
 
 procedure TChatSessionStore.UpdateSessionTitle(const ASessionId, ATitle: string);
@@ -736,6 +806,8 @@ var
 begin
   T := Trim(ATitle);
   if T = '' then Exit;
+  FFileLock.Enter;
+  try
   EnsureLoaded;
   Idx := IndexOfSession(ASessionId);
   if Idx < 0 then Exit;
@@ -762,6 +834,9 @@ begin
     WriteRootToFile(Root);
   finally
     Root.Free;
+  end;
+  finally
+    FFileLock.Leave;
   end;
 end;
 
