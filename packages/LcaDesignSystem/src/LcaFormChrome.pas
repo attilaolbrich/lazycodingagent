@@ -25,16 +25,22 @@ type
     procedure EnsurePlatformChrome;
     class procedure BeginMove(AForm: TCustomForm; AButton: TMouseButton;
       const AScreenPos: TPoint); static;
+    class function FormIsMaximized(AForm: TCustomForm): Boolean; static;
+    class procedure SetFormMaximized(AForm: TCustomForm; AMaximized: Boolean); static;
+    class procedure ToggleFormMaximize(AForm: TCustomForm); static;
   end;
 
 function AttachLcaFormChrome(AForm: TCustomForm): TLcaFormChrome;
+function LcaControlIsThemedWindowButton(AControl: TControl): Boolean;
 
 implementation
 
 uses
   Math
   {$IFDEF WINDOWS}, Windows{$ENDIF}
+  {$IFDEF LCLGtk2}, Gtk2, Gdk2{$ENDIF}
   {$IFDEF LCLGtk3}, LazGtk3, LazGdk3, LazGObject2{$ENDIF}
+  {$IFDEF LCLQt5}, QtWidgets{$ENDIF}
   {$IFDEF LCLcocoa}, CocoaAll, Cocoa_Extra{$ENDIF}
   ;
 
@@ -281,6 +287,24 @@ begin
   EnsureFormChromeInputHook;
 end;
 
+{$IFDEF LCLGtk2}
+function Gtk2FormIsMaximized(AForm: TCustomForm): Boolean;
+var
+  W: PGtkWidget;
+  AFlags: TGdkWindowState;
+begin
+  Result := False;
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then Exit;
+  W := PGtkWidget(Pointer(AForm.Handle));
+  if W = nil then Exit;
+  if not GTK_IS_WINDOW(W) then Exit;
+  if PGtkWidget(W)^.window = nil then Exit;
+  AFlags := gdk_window_get_state(PGtkWidget(W)^.window);
+  Result := (AFlags and GDK_WINDOW_STATE_MAXIMIZED) <> 0;
+end;
+{$ENDIF}
+
 {$IFDEF LCLGtk3}
 function TryGtk3BeginMove(AForm: TCustomForm; AButton: TMouseButton;
   const AScreenPos: TPoint): Boolean;
@@ -298,6 +322,36 @@ begin
   if AButton = mbRight then Btn := 3
   else if AButton = mbMiddle then Btn := 2;
   gtk_window_begin_move_drag(PGtkWindow(W), Btn, AScreenPos.X, AScreenPos.Y, 0);
+  Result := True;
+end;
+
+function Gtk3FormIsMaximized(AForm: TCustomForm): Boolean;
+var
+  W: PGtkWidget;
+begin
+  Result := False;
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then Exit;
+  W := PGtkWidget(Pointer(AForm.Handle));
+  if W = nil then Exit;
+  if not gtk_type_is_a(gtk_widget_get_type(W), gtk_window_get_type()) then Exit;
+  Result := gtk_window_is_maximized(PGtkWindow(W));
+end;
+
+function TryGtk3SetMaximized(AForm: TCustomForm; AMaximized: Boolean): Boolean;
+var
+  W: PGtkWidget;
+begin
+  Result := False;
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then Exit;
+  W := PGtkWidget(Pointer(AForm.Handle));
+  if W = nil then Exit;
+  if not gtk_type_is_a(gtk_widget_get_type(W), gtk_window_get_type()) then Exit;
+  if AMaximized then
+    gtk_window_maximize(PGtkWindow(W))
+  else
+    gtk_window_unmaximize(PGtkWindow(W));
   Result := True;
 end;
 
@@ -333,6 +387,16 @@ end;
 {$H-}
 function TryGtk3BeginMove(AForm: TCustomForm; AButton: TMouseButton;
   const AScreenPos: TPoint): Boolean;
+begin
+  Result := False;
+end;
+
+function Gtk3FormIsMaximized(AForm: TCustomForm): Boolean;
+begin
+  Result := False;
+end;
+
+function TryGtk3SetMaximized(AForm: TCustomForm; AMaximized: Boolean): Boolean;
 begin
   Result := False;
 end;
@@ -414,6 +478,26 @@ begin
   NSWindowFix(W).performWindowDragWithEvent(Ev);
   Result := True;
 end;
+
+function TryCocoaSetMaximized(AForm: TCustomForm; AMaximized: Boolean): Boolean;
+var
+  W: NSWindow;
+begin
+  Result := False;
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then
+    AForm.HandleNeeded;
+  W := CocoaFormWindow(AForm);
+  if W = nil then Exit;
+  if AMaximized then begin
+    if not W.isZoomed then
+      W.performZoom(nil);
+  end else begin
+    if W.isZoomed then
+      W.performZoom(nil);
+  end;
+  Result := True;
+end;
 {$ELSE}
 function ApplyCocoaFramelessChrome(AForm: TCustomForm): Boolean;
 begin
@@ -424,7 +508,73 @@ function TryCocoaBeginMove(AForm: TCustomForm): Boolean;
 begin
   Result := False;
 end;
+
+function TryCocoaSetMaximized(AForm: TCustomForm; AMaximized: Boolean): Boolean;
+begin
+  Result := False;
+end;
 {$ENDIF}
+
+function ClientControlOnForm(AForm: TCustomForm; const ClientP: TPoint): TControl;
+begin
+  Result := nil;
+  if not (AForm is TWinControl) then Exit;
+  Result := TWinControl(AForm).ControlAtPos(ClientP, False);
+end;
+
+function LcaControlIsThemedWindowButton(AControl: TControl): Boolean;
+begin
+  Result := Assigned(AControl) and
+    (CompareText(AControl.ClassName, 'TLcaThemedWindowButton') = 0);
+end;
+
+{$IFDEF LCLQt5}
+function Qt5FormWidget(AForm: TCustomForm): TQtWidget;
+begin
+  Result := nil;
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then Exit;
+  Result := TQtWidget(AForm.Handle);
+end;
+
+function Qt5FormIsMaximized(AForm: TCustomForm): Boolean;
+var
+  W: TQtWidget;
+begin
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit(False);
+  Result := W.isMaximized;
+end;
+
+procedure Qt5SetFormMaximized(AForm: TCustomForm; AMaximized: Boolean);
+var
+  W: TQtWidget;
+begin
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit;
+  if AMaximized then
+    W.ShowMaximized
+  else
+    W.ShowNormal;
+end;
+{$ENDIF}
+
+procedure AlignLclWindowState(AForm: TCustomForm; AMaximized: Boolean);
+var
+  Target: TWindowState;
+begin
+  if AForm = nil then Exit;
+  {$IFDEF LCLQt5}
+  if AForm.HandleAllocated then
+    AMaximized := Qt5FormIsMaximized(AForm);
+  {$ENDIF}
+  if AMaximized then
+    Target := wsMaximized
+  else
+    Target := wsNormal;
+  if AForm.WindowState <> Target then
+    AForm.WindowState := Target;
+end;
 
 procedure TryStartEdgeResize(AForm: TCustomForm; const AScreenPos: TPoint);
 var
@@ -486,6 +636,8 @@ begin
       ClientP := F.ScreenToClient(P);
       Hit := EdgeHitTestOnForm(F, ClientP);
       if Hit <> HTCLIENT then begin
+        if LcaControlIsThemedWindowButton(ClientControlOnForm(F, ClientP)) then
+          Continue;
         TryStartEdgeResize(F, P);
         Exit;
       end;
@@ -578,6 +730,82 @@ begin
   {$ENDIF}
   StartManualDrag(AForm, AScreenPos);
   {$ENDIF}
+end;
+
+class function TLcaFormChrome.FormIsMaximized(AForm: TCustomForm): Boolean;
+begin
+  Result := False;
+  if AForm = nil then Exit;
+  {$IFDEF LCLGtk2}
+  if AForm.HandleAllocated then
+    Exit(Gtk2FormIsMaximized(AForm));
+  {$ENDIF}
+  {$IFDEF LCLGtk3}
+  if AForm.HandleAllocated then
+    Exit(Gtk3FormIsMaximized(AForm));
+  {$ENDIF}
+  {$IFDEF LCLQt5}
+  if AForm.HandleAllocated then
+    Exit(Qt5FormIsMaximized(AForm));
+  {$ENDIF}
+  {$IFDEF LCLcocoa}
+  if AForm.HandleAllocated then
+    Exit(CocoaFormWindow(AForm).isZoomed);
+  {$ENDIF}
+  Result := AForm.WindowState = wsMaximized;
+end;
+
+class procedure TLcaFormChrome.SetFormMaximized(AForm: TCustomForm; AMaximized: Boolean);
+begin
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then
+    AForm.HandleNeeded;
+  {$IFDEF WINDOWS}
+  ReleaseCapture;
+  if AMaximized then
+    SendMessage(AForm.Handle, WM_SYSCOMMAND, SC_MAXIMIZE, 0)
+  else
+    SendMessage(AForm.Handle, WM_SYSCOMMAND, SC_RESTORE, 0);
+  Exit;
+  {$ENDIF}
+  {$IFDEF LCLGtk3}
+  if TryGtk3SetMaximized(AForm, AMaximized) then begin
+    Application.ProcessMessages;
+    AlignLclWindowState(AForm, AMaximized);
+    Exit;
+  end;
+  {$ENDIF}
+  {$IFDEF LCLGtk2}
+  if AMaximized then
+    ShowWindow(AForm.Handle, SW_SHOWMAXIMIZED)
+  else
+    ShowWindow(AForm.Handle, SW_SHOWNORMAL);
+  Application.ProcessMessages;
+  AlignLclWindowState(AForm, AMaximized);
+  Exit;
+  {$ENDIF}
+  {$IFDEF LCLQt5}
+  Qt5SetFormMaximized(AForm, AMaximized);
+  Application.ProcessMessages;
+  AlignLclWindowState(AForm, AMaximized);
+  Exit;
+  {$ENDIF}
+  {$IFDEF LCLcocoa}
+  if TryCocoaSetMaximized(AForm, AMaximized) then begin
+    Application.ProcessMessages;
+    AlignLclWindowState(AForm, AMaximized);
+    Exit;
+  end;
+  {$ENDIF}
+  if AMaximized then
+    AForm.WindowState := wsMaximized
+  else
+    AForm.WindowState := wsNormal;
+end;
+
+class procedure TLcaFormChrome.ToggleFormMaximize(AForm: TCustomForm);
+begin
+  SetFormMaximized(AForm, not FormIsMaximized(AForm));
 end;
 
 function TLcaFormChrome.EdgeHitTestClient(const P: TPoint): PtrInt;

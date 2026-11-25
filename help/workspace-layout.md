@@ -9,12 +9,12 @@ The main window uses a **custom title bar** (no native OS caption or window butt
 - **Owl logo** on the left (embedded in the app).
 - **Application menu** (File, View, Workspace, …) in the same strip.
 - **Minimize, maximize, and close** on the right, drawn by the LCA theme.
-- **Drag** the title bar (logo area, menu background, or empty space to the right of the menus) to move the window. **Double-click** that area to maximize or restore.
+- **Drag** the title bar (logo area, menu background, or empty space to the right of the menus) to move the window after a short pointer movement (so **double-click** can toggle maximize without starting a drag). **Double-click** that area to maximize or restore.
 - **Resize** by dragging the outer edge of the main window (within a few pixels of the border). On **Windows**, the OS handles this natively. On **macOS (Cocoa)**, the window uses AppKit’s resizable unified chrome (transparent title bar, custom LCA strip) so edge resize behaves like a normal desktop window; title-bar drags use AppKit window drag. On **Linux (GTK2)**, the app tracks the pointer to move or resize the frameless window; **GTK3** builds can use the toolkit’s native move/resize when available.
 
 ### Manual check (Linux / macOS)
 
-After building on GTK2 or Cocoa, verify: drag the title bar to move; double-click the title strip to maximize/restore; use min/max/close; open a menu flyout and a keyboard shortcut; toggle light/dark theme; drag a window edge to resize. On **macOS**, also confirm the window is not stuck at a fixed size after install from a release build.
+After building on **Qt5**, GTK, or Cocoa, verify: drag the title bar to move; double-click the title strip to maximize/restore; use min/max/close; open a menu flyout and a keyboard shortcut; toggle light/dark theme; drag a window edge to resize. On **macOS**, also confirm the window is not stuck at a fixed size after install from a release build.
 - **Detached panels** still use the normal system title bar on their floating windows.
 
 ## Navigation rail

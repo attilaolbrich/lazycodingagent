@@ -18,6 +18,9 @@ type
     FItemRects: array of TRect;
     FFlyout: TLcaThemedMenuFlyout;
     FBarFontSize: Integer;
+    FDragPending: Boolean;
+    FDragStarted: Boolean;
+    FDragDownScreen: TPoint;
     procedure SetMainMenu(AValue: TLcaThemedMainMenu);
     procedure SetThemeKind(AValue: TThemeKind);
     procedure MainMenuChanged(Sender: TObject);
@@ -33,6 +36,8 @@ type
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseLeave; override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MenuBarDblClick(Sender: TObject);
     procedure ChangeScale(M, D: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -46,6 +51,9 @@ type
   end;
 
 implementation
+
+const
+  TitleBarMenuDragThreshold = 5;
 
 function TLcaThemedMenuBar.HostForm: TCustomForm;
 begin
@@ -175,6 +183,7 @@ begin
   Height := ScaledThemedMenuBarHeight(Self);
   DoubleBuffered := True;
   FFlyout := TLcaThemedMenuFlyout.Create(nil);
+  OnDblClick := @MenuBarDblClick;
 end;
 
 destructor TLcaThemedMenuBar.Destroy;
@@ -264,8 +273,25 @@ end;
 procedure TLcaThemedMenuBar.MouseMove(Shift: TShiftState; X, Y: Integer);
 var
   NewHover: Integer;
+  Cur: TPoint;
+  F: TCustomForm;
 begin
   inherited MouseMove(Shift, X, Y);
+  if InTitleBar and FDragPending and not FDragStarted then begin
+    if not (ssLeft in Shift) then begin
+      FDragPending := False;
+      FDragStarted := False;
+    end else begin
+      F := HostForm;
+      Cur := ClientToScreen(Types.Point(X, Y));
+      if Assigned(F) and ((Abs(Cur.X - FDragDownScreen.X) >= TitleBarMenuDragThreshold) or
+         (Abs(Cur.Y - FDragDownScreen.Y) >= TitleBarMenuDragThreshold)) then begin
+        FDragStarted := True;
+        FDragPending := False;
+        TLcaFormChrome.BeginMove(F, mbLeft, FDragDownScreen);
+      end;
+    end;
+  end;
   NewHover := VisibleBarSlotAt(X, Y);
   if NewHover <> FHoverIndex then begin
     FHoverIndex := NewHover;
@@ -282,7 +308,12 @@ begin
   if Button <> mbLeft then Exit;
   Slot := VisibleBarSlotAt(X, Y);
   if Slot < 0 then begin
-    TLcaFormChrome.BeginMove(HostForm, Button, ClientToScreen(Types.Point(X, Y)));
+    if InTitleBar then begin
+      FDragDownScreen := ClientToScreen(Types.Point(X, Y));
+      FDragPending := True;
+      FDragStarted := False;
+    end else
+      TLcaFormChrome.BeginMove(HostForm, Button, ClientToScreen(Types.Point(X, Y)));
     Exit;
   end;
   MenuIdx := MenuIndexForBarSlot(Slot);
@@ -297,6 +328,28 @@ begin
     FHoverIndex := -1;
     Invalidate;
   end;
+end;
+
+procedure TLcaThemedMenuBar.MouseUp(Button: TMouseButton; Shift: TShiftState;
+  X, Y: Integer);
+begin
+  inherited MouseUp(Button, Shift, X, Y);
+  if Button = mbLeft then begin
+    FDragPending := False;
+    FDragStarted := False;
+  end;
+end;
+
+procedure TLcaThemedMenuBar.MenuBarDblClick(Sender: TObject);
+var
+  F: TCustomForm;
+begin
+  if not InTitleBar then Exit;
+  FDragPending := False;
+  FDragStarted := False;
+  F := HostForm;
+  if F = nil then Exit;
+  TLcaFormChrome.ToggleFormMaximize(F);
 end;
 
 procedure TLcaThemedMenuBar.ChangeScale(M, D: Integer);

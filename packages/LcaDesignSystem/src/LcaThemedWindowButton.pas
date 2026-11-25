@@ -39,7 +39,7 @@ function ScaledWindowChromeButtonWidth(AControl: TControl): Integer;
 implementation
 
 uses
-  Math, Types;
+  Math, Types, LcaFormChrome;
 
 function ScaledWindowChromeButtonWidth(AControl: TControl): Integer;
 begin
@@ -78,14 +78,13 @@ var
 begin
   F := HostForm;
   if F = nil then Exit;
-  if not (F is TForm) then Exit;
   case FRole of
     twbMinimize:
-      TForm(F).WindowState := wsMinimized;
+      F.WindowState := wsMinimized;
     twbMaximize:
-      TForm(F).WindowState := wsMaximized;
+      TLcaFormChrome.SetFormMaximized(F, True);
     twbRestore:
-      TForm(F).WindowState := wsNormal;
+      TLcaFormChrome.SetFormMaximized(F, False);
     twbClose:
       F.Close;
   end;

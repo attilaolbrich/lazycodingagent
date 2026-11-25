@@ -21,6 +21,9 @@ type
     FBtnMax: TLcaThemedWindowButton;
     FBtnClose: TLcaThemedWindowButton;
     FLayoutGuard: Boolean;
+    FDragPending: Boolean;
+    FDragStarted: Boolean;
+    FDragDownScreen: TPoint;
     procedure SetThemeKind(AValue: TThemeKind);
     procedure SetMainMenu(AValue: TLcaThemedMainMenu);
     procedure SetShowLogo(AValue: Boolean);
@@ -33,7 +36,11 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure FormWindowStateChanged(Sender: TObject);
     procedure SyncMaximizeButton;
-    procedure BeginDragIfLeft(Sender: TObject; Button: TMouseButton; X, Y: Integer);
+    procedure ArmTitleDrag(Sender: TObject; Button: TMouseButton; X, Y: Integer);
+    procedure TitleDragMouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
+    procedure TitleDragMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
+    procedure CancelTitleDrag;
     function HostForm: TCustomForm;
     procedure LoadOwlPicture;
   protected
@@ -61,6 +68,7 @@ uses
 
 const
   TitleBarLogoBaseWidth = 36;
+  TitleBarDragThreshold = 5;
 
 function ScaledTitleBarLogoWidth(AControl: TControl): Integer;
 begin
@@ -141,6 +149,8 @@ begin
   FImgLogo.Center := True;
   FImgLogo.OnMouseDown := @TitleBarMouseDown;
   FImgLogo.OnDblClick := @DragPanelDblClick;
+  FImgLogo.OnMouseMove := @TitleDragMouseMove;
+  FImgLogo.OnMouseUp := @TitleDragMouseUp;
 
   FMenuBar := TLcaThemedMenuBar.Create(Self);
   FMenuBar.Parent := Self;
@@ -153,6 +163,8 @@ begin
   FDragPanel.Caption := '';
   FDragPanel.OnMouseDown := @DragPanelMouseDown;
   FDragPanel.OnDblClick := @DragPanelDblClick;
+  FDragPanel.OnMouseMove := @TitleDragMouseMove;
+  FDragPanel.OnMouseUp := @TitleDragMouseUp;
 
   FBtnMin := TLcaThemedWindowButton.Create(Self);
   FBtnMin.Parent := Self;
@@ -171,6 +183,8 @@ begin
 
   OnMouseDown := @TitleBarMouseDown;
   OnDblClick := @DragPanelDblClick;
+  OnMouseMove := @TitleDragMouseMove;
+  OnMouseUp := @TitleDragMouseUp;
 end;
 
 destructor TLcaThemedTitleBar.Destroy;
@@ -234,7 +248,7 @@ var
 begin
   if not Assigned(FBtnMax) then Exit;
   F := HostForm;
-  if (F <> nil) and (F.WindowState = wsMaximized) then
+  if (F <> nil) and TLcaFormChrome.FormIsMaximized(F) then
     FBtnMax.ButtonRole := twbRestore
   else
     FBtnMax.ButtonRole := twbMaximize;
@@ -245,44 +259,84 @@ begin
   SyncMaximizeButton;
 end;
 
-procedure TLcaThemedTitleBar.BeginDragIfLeft(Sender: TObject; Button: TMouseButton;
+procedure TLcaThemedTitleBar.CancelTitleDrag;
+begin
+  FDragPending := False;
+  FDragStarted := False;
+end;
+
+procedure TLcaThemedTitleBar.ArmTitleDrag(Sender: TObject; Button: TMouseButton;
   X, Y: Integer);
 var
   S: TPoint;
-  F: TCustomForm;
 begin
   if Button <> mbLeft then Exit;
-  F := HostForm;
-  if F = nil then Exit;
-  if Sender is TControl then begin
-    S := TControl(Sender).ClientToScreen(Types.Point(X, Y));
-  end else
+  if HostForm = nil then Exit;
+  if Sender is TControl then
+    S := TControl(Sender).ClientToScreen(Types.Point(X, Y))
+  else
     S := Mouse.CursorPos;
-  TLcaFormChrome.BeginMove(F, Button, S);
+  FDragDownScreen := S;
+  FDragPending := True;
+  FDragStarted := False;
+end;
+
+procedure TLcaThemedTitleBar.TitleDragMouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+var
+  S, Cur: TPoint;
+  F: TCustomForm;
+begin
+  if not FDragPending or FDragStarted then Exit;
+  if not (ssLeft in Shift) then begin
+    CancelTitleDrag;
+    Exit;
+  end;
+  F := HostForm;
+  if F = nil then begin
+    CancelTitleDrag;
+    Exit;
+  end;
+  if Sender is TControl then
+    Cur := TControl(Sender).ClientToScreen(Types.Point(X, Y))
+  else
+    Cur := Mouse.CursorPos;
+  S := Cur;
+  if (Abs(S.X - FDragDownScreen.X) < TitleBarDragThreshold) and
+     (Abs(S.Y - FDragDownScreen.Y) < TitleBarDragThreshold) then
+    Exit;
+  FDragStarted := True;
+  FDragPending := False;
+  TLcaFormChrome.BeginMove(F, mbLeft, FDragDownScreen);
+end;
+
+procedure TLcaThemedTitleBar.TitleDragMouseUp(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if Button = mbLeft then
+    CancelTitleDrag;
 end;
 
 procedure TLcaThemedTitleBar.TitleBarMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  BeginDragIfLeft(Sender, Button, X, Y);
+  ArmTitleDrag(Sender, Button, X, Y);
 end;
 
 procedure TLcaThemedTitleBar.DragPanelMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
-  BeginDragIfLeft(Sender, Button, X, Y);
+  ArmTitleDrag(Sender, Button, X, Y);
 end;
 
 procedure TLcaThemedTitleBar.DragPanelDblClick(Sender: TObject);
 var
   F: TCustomForm;
 begin
+  CancelTitleDrag;
   F := HostForm;
   if F = nil then Exit;
-  if F.WindowState = wsMaximized then
-    F.WindowState := wsNormal
-  else
-    F.WindowState := wsMaximized;
+  TLcaFormChrome.ToggleFormMaximize(F);
   SyncMaximizeButton;
 end;
 
