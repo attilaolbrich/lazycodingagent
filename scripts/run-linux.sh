@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run LazyCodingAgent on Linux; on Wayland, prefer XWayland (Qt5 xcb or GDK x11).
+# Run LazyCodingAgent on Linux; Qt5 uses xcb (XWayland on Wayland), Gtk2 uses x11 on Wayland.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,14 +10,10 @@ if [[ ! -x "$EXE" ]]; then
   exit 1
 fi
 
-if [[ "${XDG_SESSION_TYPE:-}" == wayland ]]; then
-  if ldd "$EXE" 2>/dev/null | grep -q 'libQt5Core'; then
-    if [[ -z "${QT_QPA_PLATFORM:-}" ]]; then
-      export QT_QPA_PLATFORM=xcb
-    fi
-  elif [[ -z "${GDK_BACKEND:-}" ]]; then
-    export GDK_BACKEND=x11
-  fi
+if ldd "$EXE" 2>/dev/null | grep -q 'libQt5Core'; then
+  export QT_QPA_PLATFORM=xcb
+elif [[ "${XDG_SESSION_TYPE:-}" == wayland ]] && [[ -z "${GDK_BACKEND:-}" ]]; then
+  export GDK_BACKEND=x11
 fi
 
 exec "$EXE" "$@"

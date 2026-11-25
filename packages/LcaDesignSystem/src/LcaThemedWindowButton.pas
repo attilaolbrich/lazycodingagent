@@ -80,7 +80,7 @@ begin
   if F = nil then Exit;
   case FRole of
     twbMinimize:
-      F.WindowState := wsMinimized;
+      TLcaFormChrome.SetFormMinimized(F);
     twbMaximize:
       TLcaFormChrome.SetFormMaximized(F, True);
     twbRestore:

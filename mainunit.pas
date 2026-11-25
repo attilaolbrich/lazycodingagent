@@ -962,12 +962,20 @@ end;
 procedure TLazyCodingAgentForm.RevealAfterSplash;
 begin
   if csDesigning in ComponentState then Exit;
-  ApplyInitialWindowSize;
-  EnsureFormOnScreen;
   WindowState := wsNormal;
   Visible := True;
   Show;
   BringToFront;
+  {$IFDEF LCLQt5}
+  Application.ProcessMessages;
+  if Assigned(FFormChrome) then
+    FFormChrome.EnsurePlatformChrome;
+  {$ENDIF}
+  ApplyInitialWindowSize;
+  EnsureFormOnScreen;
+  {$IFDEF LCLQt5}
+  TLcaFormChrome.EnsureWidgetGeometry(Self);
+  {$ENDIF}
   {$IFDEF WINDOWS}
   if HandleAllocated then begin
     ShowWindow(Handle, SW_SHOW);

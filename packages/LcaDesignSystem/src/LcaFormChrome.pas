@@ -27,7 +27,11 @@ type
       const AScreenPos: TPoint); static;
     class function FormIsMaximized(AForm: TCustomForm): Boolean; static;
     class procedure SetFormMaximized(AForm: TCustomForm; AMaximized: Boolean); static;
+    class procedure SetFormMinimized(AForm: TCustomForm); static;
     class procedure ToggleFormMaximize(AForm: TCustomForm); static;
+    class procedure EnsureWidgetGeometry(AForm: TCustomForm); static;
+    class procedure DebugDumpQt5ChromeState(AForm: TCustomForm;
+      const ATag: string); static;
   end;
 
 function AttachLcaFormChrome(AForm: TCustomForm): TLcaFormChrome;
@@ -40,7 +44,7 @@ uses
   {$IFDEF WINDOWS}, Windows{$ENDIF}
   {$IFDEF LCLGtk2}, Gtk2, Gdk2{$ENDIF}
   {$IFDEF LCLGtk3}, LazGtk3, LazGdk3, LazGObject2{$ENDIF}
-  {$IFDEF LCLQt5}, QtWidgets{$ENDIF}
+  {$IFDEF LCLQt5}, QtWidgets, qt5{$ENDIF}
   {$IFDEF LCLcocoa}, CocoaAll, Cocoa_Extra{$ENDIF}
   ;
 
@@ -74,6 +78,21 @@ var
   GResizeStartCursor: TPoint;
   GResizeStartBounds: TRect;
   GManualLeftDown: Boolean = False;
+
+{$IFDEF LCLQt5}
+const
+  Qt5WidgetSizeMax = 16777215;
+
+var
+  GQt5ChromeX11Warned: Boolean = False;
+{$ENDIF}
+
+procedure AlignLclWindowState(AForm: TCustomForm; AMaximized: Boolean); forward;
+{$IFDEF LCLQt5}
+function Qt5FormWidget(AForm: TCustomForm): TQtWidget; forward;
+procedure Qt5SyncLclBoundsFromWidget(AForm: TCustomForm); forward;
+procedure Qt5ReleaseFixedSize(AForm: TCustomForm); forward;
+{$ENDIF}
 
 function EdgeSize(AForm: TCustomForm): Integer;
 begin
@@ -189,10 +208,17 @@ begin
 end;
 
 procedure StopDrag;
+var
+  F: TCustomForm;
 begin
+  F := GDragForm;
   GDragForm := nil;
   if GResizeForm = nil then
     GManualLeftDown := False;
+  {$IFDEF LCLQt5}
+  if F <> nil then
+    Qt5SyncLclBoundsFromWidget(F);
+  {$ENDIF}
 end;
 
 procedure StopResize;
@@ -263,8 +289,20 @@ begin
 end;
 
 procedure StartManualDrag(AForm: TCustomForm; const AScreenPos: TPoint);
+{$IFDEF LCLQt5}
+var
+  W: TQtWidget;
+{$ENDIF}
 begin
   StopResize;
+  {$IFDEF LCLQt5}
+  W := Qt5FormWidget(AForm);
+  if (W <> nil) and W.isMaximized then begin
+    W.ShowNormal;
+    Application.ProcessMessages;
+    Qt5SyncLclBoundsFromWidget(AForm);
+  end;
+  {$ENDIF}
   GDragForm := AForm;
   GDragStartCursor := AScreenPos;
   GDragStartFormPos.X := AForm.Left;
@@ -529,6 +567,73 @@ begin
 end;
 
 {$IFDEF LCLQt5}
+{$IFDEF UNIX}
+{$linklib X11}
+
+type
+  TQt5XDisplay = Pointer;
+  TQt5XWindow = PtrUInt;
+  TQt5XDrawable = PtrUInt;
+  PTQt5XWindow = ^TQt5XWindow;
+
+function XDefaultRootWindow(display: TQt5XDisplay): TQt5XWindow; cdecl; external 'X11';
+function XGetGeometry(display: TQt5XDisplay; d: TQt5XDrawable; root_return: PTQt5XWindow;
+  x, y, width, height, border_width, depth: PInteger): Integer; cdecl; external 'X11';
+function XTranslateCoordinates(display: TQt5XDisplay; src_w, dest_w: TQt5XWindow;
+  src_x, src_y: Integer; dest_x_return, dest_y_return: PInteger;
+  child_return: PTQt5XWindow): Integer; cdecl; external 'X11';
+
+function Qt5X11WindowBoundsOnRoot(AWidget: QWidgetH; out R: TRect): Boolean;
+var
+  Dpy: TQt5XDisplay;
+  Root, Win: TQt5XWindow;
+  X, Y, W, H, BW, Depth: Integer;
+  AbsX, AbsY: Integer;
+  Child: TQt5XWindow;
+begin
+  Result := False;
+  FillChar(R, SizeOf(R), 0);
+  Dpy := QX11Info_display();
+  if Dpy = nil then Exit;
+  Win := QWidget_winId(AWidget);
+  if Win = 0 then Exit;
+  Root := XDefaultRootWindow(Dpy);
+  if XGetGeometry(Dpy, Win, @Root, @X, @Y, @W, @H, @BW, @Depth) = 0 then Exit;
+  if XTranslateCoordinates(Dpy, Win, Root, 0, 0, @AbsX, @AbsY, @Child) = 0 then Exit;
+  R := Bounds(AbsX, AbsY, W, H);
+  Result := (W > 0) and (H > 0);
+end;
+{$ENDIF}
+
+function Qt5RectUsable(const R: TRect): Boolean;
+begin
+  Result := (R.Width > 0) and (R.Height > 0);
+end;
+
+procedure Qt5ChromeDebug(const AMsg: string);
+begin
+  if GetEnvironmentVariable('LAZY_DEBUG_CHROME') = '' then Exit;
+  WriteLn(StdErr, 'Qt5 chrome: ', AMsg);
+end;
+
+procedure Qt5LogX11DisplayIfDebug;
+begin
+  if GQt5ChromeX11Warned then Exit;
+  if GetEnvironmentVariable('LAZY_DEBUG_CHROME') = '' then Exit;
+  GQt5ChromeX11Warned := True;
+  if QX11Info_display() = nil then
+    Qt5ChromeDebug('QX11 display missing; check QT_QPA_PLATFORM=xcb');
+end;
+
+function TryQt5BeginMove(AForm: TCustomForm; AButton: TMouseButton;
+  const AScreenPos: TPoint): Boolean;
+begin
+  // QWindow::startSystemMove is not in LCL qt5 bindings; manual drag uses LCL SetBounds.
+  Result := False;
+  if AForm = nil then Exit;
+  if AButton <> mbLeft then Exit;
+end;
+
 function Qt5FormWidget(AForm: TCustomForm): TQtWidget;
 begin
   Result := nil;
@@ -537,13 +642,128 @@ begin
   Result := TQtWidget(AForm.Handle);
 end;
 
+procedure Qt5EnsureFramelessFlags(AForm: TCustomForm);
+var
+  W: TQtWidget;
+  Wanted, Current: QtWindowFlags;
+  WasVisible: Boolean;
+begin
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit;
+  Wanted := QtWindow or QtFramelessWindowHint;
+  Current := W.windowFlags;
+  if (Current and Wanted) = Wanted then Exit;
+  WasVisible := W.getVisible;
+  W.setWindowFlags(Wanted);
+  if WasVisible then
+    W.setVisible(True);
+end;
+
+procedure Qt5ReleaseFixedSize(AForm: TCustomForm);
+var
+  W: TQtWidget;
+  MinW, MinH: Integer;
+begin
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit;
+  MinW := AForm.Constraints.MinWidth;
+  MinH := AForm.Constraints.MinHeight;
+  if MinW < 0 then
+    MinW := 0;
+  if MinH < 0 then
+    MinH := 0;
+  W.setMinimumSize(MinW, MinH);
+  W.setMaximumSize(Qt5WidgetSizeMax, Qt5WidgetSizeMax);
+end;
+
+procedure Qt5SyncLclBoundsFromWidget(AForm: TCustomForm);
+var
+  W: TQtWidget;
+  R: TRect;
+begin
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit;
+  R := W.getFrameGeometry;
+  if not Qt5RectUsable(R) then Exit;
+  if (AForm.Left <> R.Left) or (AForm.Top <> R.Top) or
+     (AForm.Width <> R.Width) or (AForm.Height <> R.Height) then
+    AForm.SetBounds(R.Left, R.Top, R.Width, R.Height);
+end;
+
+procedure Qt5ChromeDumpState(AForm: TCustomForm; const ATag: string);
+var
+  W: TQtWidget;
+  B, WinR: TRect;
+  QtState: QtWindowStates;
+  WinROk: Boolean;
+  LclState: string;
+begin
+  if GetEnvironmentVariable('LAZY_DEBUG_CHROME') = '' then Exit;
+  if AForm = nil then Exit;
+  B := AForm.BoundsRect;
+  case AForm.WindowState of
+    wsMinimized: LclState := 'wsMinimized';
+    wsMaximized: LclState := 'wsMaximized';
+    wsFullScreen: LclState := 'wsFullScreen';
+  else
+    LclState := 'wsNormal';
+  end;
+  W := Qt5FormWidget(AForm);
+  FillChar(WinR, SizeOf(WinR), 0);
+  WinROk := False;
+  if W = nil then begin
+    Qt5ChromeDebug(Format('%s: bounds %d,%d %dx%d lcl=%s (no widget)',
+      [ATag, B.Left, B.Top, B.Width, B.Height, LclState]));
+    Exit;
+  end;
+  QtState := W.getWindowState;
+  Qt5ChromeDebug(Format(
+    '%s: bounds %d,%d %dx%d lcl=%s qtMax=%s qtMin=%s qtState=$%x',
+    [ATag, B.Left, B.Top, B.Width, B.Height, LclState,
+     BoolToStr(W.isMaximized, True), BoolToStr(W.isMinimized, True),
+     Integer(QtState)]));
+  {$IFDEF UNIX}
+  WinROk := Qt5X11WindowBoundsOnRoot(W.Widget, WinR);
+  {$ENDIF}
+  if WinROk then
+    Qt5ChromeDebug(Format('%s: winR %d,%d %dx%d',
+      [ATag, WinR.Left, WinR.Top, WinR.Width, WinR.Height]));
+end;
+
+procedure Qt5ApplyWidgetBounds(AForm: TCustomForm; const R: TRect);
+var
+  W: TQtWidget;
+begin
+  if (R.Width < 1) or (R.Height < 1) then Exit;
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit;
+  W.BeginUpdate;
+  try
+    W.move(R.Left, R.Top);
+    W.resize(R.Width, R.Height);
+  finally
+    W.EndUpdate;
+  end;
+  AForm.SetBounds(R.Left, R.Top, R.Width, R.Height);
+end;
+
 function Qt5FormIsMaximized(AForm: TCustomForm): Boolean;
 var
   W: TQtWidget;
 begin
   W := Qt5FormWidget(AForm);
+  if W <> nil then
+    Exit(W.isMaximized);
+  Result := AForm.WindowState = wsMaximized;
+end;
+
+function Qt5FormIsMinimized(AForm: TCustomForm): Boolean;
+var
+  W: TQtWidget;
+begin
+  W := Qt5FormWidget(AForm);
   if W = nil then Exit(False);
-  Result := W.isMaximized;
+  Result := W.isMinimized;
 end;
 
 procedure Qt5SetFormMaximized(AForm: TCustomForm; AMaximized: Boolean);
@@ -552,12 +772,49 @@ var
 begin
   W := Qt5FormWidget(AForm);
   if W = nil then Exit;
+  Qt5ReleaseFixedSize(AForm);
   if AMaximized then
     W.ShowMaximized
   else
     W.ShowNormal;
+  if AMaximized then
+    Qt5ChromeDumpState(AForm, 'SetFormMaximized')
+  else
+    Qt5ChromeDumpState(AForm, 'SetFormRestore');
+end;
+
+procedure Qt5SetFormMinimized(AForm: TCustomForm);
+var
+  W: TQtWidget;
+begin
+  W := Qt5FormWidget(AForm);
+  if W = nil then Exit;
+  Qt5EnsureFramelessFlags(AForm);
+  W.ShowMinimized;
 end;
 {$ENDIF}
+
+class procedure TLcaFormChrome.DebugDumpQt5ChromeState(AForm: TCustomForm;
+  const ATag: string);
+begin
+  {$IFDEF LCLQt5}
+  Qt5ChromeDumpState(AForm, ATag);
+  {$ENDIF}
+end;
+
+procedure AlignLclWindowStateMinimized(AForm: TCustomForm);
+begin
+  if AForm = nil then Exit;
+  {$IFDEF LCLQt5}
+  if AForm.HandleAllocated and Qt5FormIsMinimized(AForm) then begin
+    if AForm.WindowState <> wsMinimized then
+      AForm.WindowState := wsMinimized;
+    Exit;
+  end;
+  {$ENDIF}
+  if AForm.WindowState <> wsMinimized then
+    AForm.WindowState := wsMinimized;
+end;
 
 procedure AlignLclWindowState(AForm: TCustomForm; AMaximized: Boolean);
 var
@@ -695,6 +952,14 @@ end;
 procedure TLcaFormChrome.EnsurePlatformChrome;
 begin
   if FForm = nil then Exit;
+  {$IFDEF LCLQt5}
+  if not FForm.HandleAllocated then
+    FForm.HandleNeeded;
+  Qt5EnsureFramelessFlags(FForm);
+  {$IFDEF UNIX}
+  Qt5LogX11DisplayIfDebug;
+  {$ENDIF}
+  {$ENDIF}
   {$IFDEF LCLcocoa}
   if not FForm.HandleAllocated then
     FForm.HandleNeeded;
@@ -727,6 +992,9 @@ begin
   {$ENDIF}
   {$IFDEF LCLcocoa}
   if TryCocoaBeginMove(AForm) then Exit;
+  {$ENDIF}
+  {$IFDEF LCLQt5}
+  if TryQt5BeginMove(AForm, AButton, AScreenPos) then Exit;
   {$ENDIF}
   StartManualDrag(AForm, AScreenPos);
   {$ENDIF}
@@ -808,6 +1076,56 @@ begin
   SetFormMaximized(AForm, not FormIsMaximized(AForm));
 end;
 
+class procedure TLcaFormChrome.SetFormMinimized(AForm: TCustomForm);
+begin
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then
+    AForm.HandleNeeded;
+  {$IFDEF WINDOWS}
+  ReleaseCapture;
+  SendMessage(AForm.Handle, WM_SYSCOMMAND, SC_MINIMIZE, 0);
+  Exit;
+  {$ENDIF}
+  {$IFDEF LCLGtk3}
+  ShowWindow(AForm.Handle, SW_SHOWMINIMIZED);
+  Application.ProcessMessages;
+  AlignLclWindowStateMinimized(AForm);
+  Exit;
+  {$ENDIF}
+  {$IFDEF LCLGtk2}
+  ShowWindow(AForm.Handle, SW_SHOWMINIMIZED);
+  Application.ProcessMessages;
+  AlignLclWindowStateMinimized(AForm);
+  Exit;
+  {$ENDIF}
+  {$IFDEF LCLQt5}
+  Qt5SetFormMinimized(AForm);
+  Application.ProcessMessages;
+  AlignLclWindowStateMinimized(AForm);
+  Exit;
+  {$ENDIF}
+  AForm.WindowState := wsMinimized;
+end;
+
+class procedure TLcaFormChrome.EnsureWidgetGeometry(AForm: TCustomForm);
+var
+  R: TRect;
+begin
+  if AForm = nil then Exit;
+  if not AForm.HandleAllocated then Exit;
+  {$IFDEF LCLQt5}
+  if Qt5FormIsMaximized(AForm) or Qt5FormIsMinimized(AForm) then Exit;
+  if AForm.WindowState in [wsMaximized, wsMinimized] then Exit;
+  Qt5EnsureFramelessFlags(AForm);
+  R := Bounds(AForm.Left, AForm.Top, AForm.Width, AForm.Height);
+  Qt5ApplyWidgetBounds(AForm, R);
+  Application.ProcessMessages;
+  Exit;
+  {$ENDIF}
+  if AForm.WindowState <> wsNormal then Exit;
+  AForm.SetBounds(AForm.Left, AForm.Top, AForm.Width, AForm.Height);
+end;
+
 function TLcaFormChrome.EdgeHitTestClient(const P: TPoint): PtrInt;
 begin
   Result := EdgeHitTestOnForm(FForm, P);
@@ -844,6 +1162,10 @@ begin
     {$ENDIF}
   end;
   FOldWindowProc(Message);
+  {$IFDEF LCLQt5}
+  if FBorderlessApplied and Assigned(FForm) and (Message.Msg = LM_SIZE) then
+    Qt5ReleaseFixedSize(FForm);
+  {$ENDIF}
 end;
 
 function AttachLcaFormChrome(AForm: TCustomForm): TLcaFormChrome;

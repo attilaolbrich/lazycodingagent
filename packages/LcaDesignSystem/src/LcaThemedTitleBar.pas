@@ -255,7 +255,14 @@ begin
 end;
 
 procedure TLcaThemedTitleBar.FormWindowStateChanged(Sender: TObject);
+var
+  F: TCustomForm;
 begin
+  F := HostForm;
+  {$IFDEF LCLQt5}
+  if F <> nil then
+    TLcaFormChrome.DebugDumpQt5ChromeState(F, 'OnWindowStateChange');
+  {$ENDIF}
   SyncMaximizeButton;
 end;
 
